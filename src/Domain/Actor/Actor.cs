@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SharedKernel;
 
-namespace SharedKernel
+namespace Domain.Actor
 {
-    public class Entity
+    public class Actor : Entity
     {
-        public Guid Id { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public ActorType Type;
     }
 }

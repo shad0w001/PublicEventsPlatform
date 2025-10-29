@@ -4,11 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharedKernel
+namespace Domain.Event
 {
-    public class Entity
+    public enum EventAttendeeStatus
     {
-        public Guid Id { get; set; }
-        public DateTime CreatedAt { get; set; }
+        Invited,
+        Going,
+        Interested,
+        NotGoing
     }
 }
