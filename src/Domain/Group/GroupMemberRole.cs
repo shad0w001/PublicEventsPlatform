@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Group
 {
-    public enum GroupRole
+    public enum GroupMemberRole
     {
         Member,
         Moderator,

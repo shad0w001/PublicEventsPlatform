@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Domain.User
@@ -16,6 +17,6 @@ namespace Domain.User
         public string ProfilePictureUrl { get; set; }
         public string? Bio { get; set; }
         public DateTime LastActive { get; set; }
-        public List<GroupMembership> Groups { get; set; }
+        public List<Group.Group> Groups { get; set; }
     }
 }

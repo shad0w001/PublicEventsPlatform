@@ -9,6 +9,6 @@ namespace Domain.Event
     public class EventOrganizer
     {
         public Guid EventId { get; set; }
-        public Guid OrganizerId { get; set; }
+        public Guid ActorId { get; set; }
     }
 }

@@ -12,6 +12,6 @@ namespace Domain.Group
         public string Name { get; set; }
         public string Description { get; set; }
         public string? ProfileImageUrl { get; set; }
-        public List<GroupMembership> Members { get; set; }
+        public List<GroupMember> GroupMembers { get; set; }
     }
 }

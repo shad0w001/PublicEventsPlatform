@@ -1,4 +1,5 @@
 ﻿using Domain.Actor;
+using Domain.Event.EventLocation;
 using SharedKernel;
 using System;
 using System.Collections.Generic;
@@ -16,9 +17,8 @@ namespace Domain.Event
         public string? BannerImageUrl { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
-        public List<EventLocation> Locations { get; set; }
-        public bool IsOnline { get; set; }
-        public bool IsHybrid { get; set; }
+        public EventLocationType LocationType { get; set; }
+        public List<EventLocation.EventLocation> Locations { get; set; }
         public List<EventOrganizer> Organizers { get; set; }
         public List<EventAttendee> Attendees { get; set; }
         public EventStatus Status { get; set; }

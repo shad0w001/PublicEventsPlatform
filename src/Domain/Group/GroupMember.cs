@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Domain.Group
 {
-    public class GroupMembership
+    public class GroupMember
     {
         public Guid GroupId { get; set; }
         public Guid UserId { get; set; }
         public DateTime JoinedAt { get; set; }
-        public GroupRole Role { get; set; }
+        public GroupMemberRole Role { get; set; }
     }
 
 }
