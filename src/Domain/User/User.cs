@@ -17,6 +17,6 @@ namespace Domain.User
         public string ProfilePictureUrl { get; set; }
         public string? Bio { get; set; }
         public DateTime LastActive { get; set; }
-        public List<Group.Group> Groups { get; set; }
+        public List<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
     }
 }

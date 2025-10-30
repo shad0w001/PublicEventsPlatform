@@ -12,6 +12,9 @@ namespace Domain.Group
         public Guid UserId { get; set; }
         public DateTime JoinedAt { get; set; }
         public GroupMemberRole Role { get; set; }
+
+        public Group Group { get; set; }
+        public User.User User { get; set; }
     }
 
 }
