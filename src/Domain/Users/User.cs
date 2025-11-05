@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Domain.User
+namespace Domain.Users
 {
     public class User : Entity
     {

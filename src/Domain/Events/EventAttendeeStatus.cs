@@ -4,11 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Actor
+namespace Domain.Events
 {
-    public enum ActorType
+    public enum EventAttendeeStatus
     {
-        Individual,
-        Organization
+        Invited,
+        Going,
+        Interested,
+        NotGoing
     }
 }

@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Group
+namespace Domain.Events
 {
-    public enum GroupMemberRole
+    public enum EventStatus
     {
-        Member,
-        Moderator,
-        Administrator,
-        Owner
+        Draft,
+        Published,
+        Cancelled
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Event.EventLocation
+namespace Domain.Events.EventLocation
 {
     public class PhysicalEventLocation
     {

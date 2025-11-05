@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Domain.Users;
 
-namespace Domain.Group
+namespace Domain.Groups
 {
     public class GroupMember
     {
@@ -14,7 +15,7 @@ namespace Domain.Group
         public GroupMemberRole Role { get; set; }
 
         public Group Group { get; set; }
-        public User.User User { get; set; }
+        public User User { get; set; }
     }
 
 }

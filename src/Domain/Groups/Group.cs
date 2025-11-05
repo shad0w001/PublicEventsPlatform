@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Group
+namespace Domain.Groups
 {
     public class Group : Entity
     {

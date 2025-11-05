@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Event
+namespace Domain.Actors
 {
-    public enum EventLocationType
+    public enum ActorType
     {
-        Online,
-        Physical,
-        Hybrid
+        Individual,
+        Organization
     }
 }
