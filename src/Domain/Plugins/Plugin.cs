@@ -13,5 +13,7 @@ namespace Domain.Plugins
         public string Description { get; set; }
         public string Version { get; set; }
         public string Author { get; set; }
+
+        public List<PluginUsage> Usages { get; set; } = new();
     }
 }

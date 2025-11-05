@@ -1,5 +1,5 @@
 ﻿using Domain.Actors;
-using Domain.Event.EventLocation;
+using Domain.Events.EventLocations;
 using Domain.Plugins;
 using SharedKernel;
 using System;
@@ -18,11 +18,11 @@ namespace Domain.Events
         public string? BannerImageUrl { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
+        public EventStatus Status { get; set; }
         public EventLocationType LocationType { get; set; }
-        public List<EventLocation.EventLocation> Locations { get; set; }
+        public List<EventLocation> Locations { get; set; }
         public List<EventOrganizer> Organizers { get; set; }
         public List<EventAttendee> Attendees { get; set; }
-        public EventStatus Status { get; set; }
         public List<PluginUsage> Plugins { get; set; } = new();
     }
 }

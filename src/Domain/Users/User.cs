@@ -1,4 +1,4 @@
-﻿using Domain.Group;
+﻿using Domain.Groups;
 using SharedKernel;
 using System;
 using System.Collections.Generic;

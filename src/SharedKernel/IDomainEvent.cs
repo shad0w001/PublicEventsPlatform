@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure
+namespace SharedKernel
 {
-    internal class Class1
+    public interface IDomainEvent
     {
+
     }
 }
