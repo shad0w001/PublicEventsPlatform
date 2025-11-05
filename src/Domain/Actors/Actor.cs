@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SharedKernel;
 
-namespace Domain.Actor
+namespace Domain.Actors
 {
     public class Actor : Entity
     {

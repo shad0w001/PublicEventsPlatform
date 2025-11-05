@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace SharedKernel
 {
-    public class Entity
+    public abstract class Entity
     {
-        public Guid Id { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public Guid Id { get; private set; } = Guid.CreateVersion7();
+        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     }
 }

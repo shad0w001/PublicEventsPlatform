@@ -4,13 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Event
+namespace Domain.Events.EventLocation
 {
-    public enum EventAttendeeStatus
+    public class OnlineEventLocation : EventLocation
     {
-        Invited,
-        Going,
-        Interested,
-        NotGoing
+        public string Url { get; set; }
     }
 }

@@ -1,5 +1,6 @@
-﻿using Domain.Actor;
+﻿using Domain.Actors;
 using Domain.Event.EventLocation;
+using Domain.Plugins;
 using SharedKernel;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Event
+namespace Domain.Events
 {
     public class Event : Entity
     {
@@ -22,5 +23,6 @@ namespace Domain.Event
         public List<EventOrganizer> Organizers { get; set; }
         public List<EventAttendee> Attendees { get; set; }
         public EventStatus Status { get; set; }
+        public List<PluginUsage> Plugins { get; set; } = new();
     }
 }
