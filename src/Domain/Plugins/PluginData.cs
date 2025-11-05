@@ -9,10 +9,10 @@ namespace Domain.Plugins
 {
     public class PluginData : Entity
     {
-        public Guid PluginId { get; set; }
+        public Guid PluginUsageId { get; set; }
         public string Key { get; set; }
         public string? Value { get; set; }
 
-        public Plugin Plugin { get; set; }
+        public PluginUsage PluginUsage { get; set; } = null!;
     }
 }

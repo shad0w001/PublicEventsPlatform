@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Events.EventLocation
+namespace Domain.Events.EventLocations
 {
-    public class OnlineEventLocation : EventLocation
+    public enum EventLocationKind
     {
-        public string Url { get; set; }
+        Physical,
+        Virtual
     }
 }
