@@ -15,10 +15,17 @@ namespace Infrastructure.Database.Configurations.Events
         {
             builder.ToTable("event_organizers");
 
-            builder.HasKey(o => new { o.EventId, o.ActorId });
+            builder.HasKey(eo => new { eo.EventId, eo.ParticipantId });
 
-            builder.Property(o => o.EventId).IsRequired();
-            builder.Property(o => o.ActorId).IsRequired();
+            builder.HasOne(eo => eo.Event)
+                .WithMany(e => e.Organizers)
+                .HasForeignKey(eo => eo.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(eo => eo.Participant)
+                .WithMany(p => p.OrganizedEvents)
+                .HasForeignKey(eo => eo.ParticipantId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

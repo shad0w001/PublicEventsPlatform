@@ -1,4 +1,4 @@
-﻿using Domain.Actors;
+﻿using Domain.Participants;
 using Domain.Events.EventLocations;
 using Domain.Plugins;
 using SharedKernel;

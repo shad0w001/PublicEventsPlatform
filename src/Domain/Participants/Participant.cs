@@ -10,7 +10,6 @@ namespace Domain.Participants
 {
     public abstract class Participant : Entity
     {
-        public ParticipantType Type { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public ICollection<EventOrganizer> OrganizedEvents { get; set; } = new List<Events.EventOrganizer>();

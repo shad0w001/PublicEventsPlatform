@@ -15,13 +15,23 @@ namespace Infrastructure.Database.Configurations.Events
         {
             builder.ToTable("event_attendees");
 
-            builder.HasKey(ea => new { ea.EventId, ea.AttendeeId });
+            builder.HasKey(ea => new { ea.EventId, ea.ParticipantId });
 
-            builder.Property(ea => ea.RegisteredAt);
-            builder.Property(ea => ea.CheckedInAt);
+            builder.Property(ea => ea.RegisteredAt).IsRequired();
+
+            builder.HasOne(ea => ea.Event)
+                .WithMany(e => e.Attendees)
+                .HasForeignKey(ea => ea.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(ea => ea.Participant)
+                .WithMany(p => p.AttendedEvents)
+                .HasForeignKey(ea => ea.ParticipantId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(ea => ea.Status)
                 .HasConversion<string>()
+                .HasMaxLength(50)
                 .IsRequired();
         }
     }

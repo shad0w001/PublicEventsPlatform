@@ -1,5 +1,5 @@
 ﻿using Domain.Groups;
-using Domain.Actors;
+using Domain.Participants;
 using SharedKernel;
 using System;
 using System.Collections.Generic;
@@ -18,6 +18,6 @@ namespace Domain.Users
         public string ProfilePictureUrl { get; set; }
         public string? Bio { get; set; }
         public DateTime LastActive { get; set; }
-        public List<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
+        public List<GroupMembership> GroupMemberships { get; set; } = new List<GroupMembership>();
     }
 }

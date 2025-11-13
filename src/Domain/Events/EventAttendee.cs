@@ -13,7 +13,7 @@ namespace Domain.Events
         public Guid ParticipantId { get; set; }
 
         public Event Event { get; set; }
-        public Participant Attendee { get; set; }
+        public Participant Participant { get; set; }
 
         public DateTime? RegisteredAt { get; set; }
         public DateTime? CheckedInAt { get; set; }
