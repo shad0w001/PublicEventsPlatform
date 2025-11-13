@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Database.Configurations.Actors
 {
-    public class ActorConfiguration : IEntityTypeConfiguration<Actor>
+    public class ActorConfiguration : IEntityTypeConfiguration<Participant>
     {
-        public void Configure(EntityTypeBuilder<Actor> builder)
+        public void Configure(EntityTypeBuilder<Participant> builder)
         {
             builder.ToTable("actors");
 

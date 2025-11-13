@@ -17,7 +17,7 @@ namespace Infrastructure.Database
         public DbSet<User> Users => Set<User>();
         public DbSet<Group> Groups => Set<Group>();
         public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
-        public DbSet<Actor> Actors => Set<Actor>();
+        public DbSet<Participant> Actors => Set<Participant>();
         public DbSet<Event> Events => Set<Event>();
         public DbSet<EventOrganizer> EventOrganizers => Set<EventOrganizer>();
         public DbSet<EventAttendee> EventAttendees => Set<EventAttendee>();

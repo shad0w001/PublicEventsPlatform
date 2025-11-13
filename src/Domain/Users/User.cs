@@ -1,4 +1,5 @@
 ﻿using Domain.Groups;
+using Domain.Actors;
 using SharedKernel;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Users
 {
-    public class User : Entity
+    public class User : Participant
     {
         public string Username { get; set; }
         public string Email { get; set; }

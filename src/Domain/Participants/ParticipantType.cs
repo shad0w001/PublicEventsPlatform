@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SharedKernel;
 
-namespace Domain.Actors
+namespace Domain.Participants
 {
-    public class Actor : Entity
+    public enum ParticipantType
     {
-        public ActorType Type;
+        User,
+        Organization
     }
 }
