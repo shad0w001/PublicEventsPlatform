@@ -1,4 +1,4 @@
-﻿using Domain.Actors;
+﻿using Domain.Participants;
 using Domain.Events;
 using Domain.Groups;
 using Domain.Plugins;
@@ -14,15 +14,16 @@ namespace Infrastructure.Database
 {
     public sealed class ApplicationDbContext : DbContext
     {
+        public DbSet<Participant> Participants => Set<Participant>();
         public DbSet<User> Users => Set<User>();
         public DbSet<Group> Groups => Set<Group>();
-        public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
-        public DbSet<Actor> Actors => Set<Actor>();
+        public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();
         public DbSet<Event> Events => Set<Event>();
         public DbSet<EventOrganizer> EventOrganizers => Set<EventOrganizer>();
         public DbSet<EventAttendee> EventAttendees => Set<EventAttendee>();
         public DbSet<Plugin> Plugins => Set<Plugin>();
         public DbSet<PluginUsage> PluginUsages => Set<PluginUsage>();
+        public DbSet<EventCategory> EventCategories => Set<EventCategory>();
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

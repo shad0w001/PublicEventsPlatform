@@ -1,4 +1,5 @@
 ﻿using Domain.Groups;
+using Domain.Participants;
 using SharedKernel;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Users
 {
-    public class User : Entity
+    public class User : Participant
     {
         public string Username { get; set; }
         public string Email { get; set; }
@@ -17,6 +18,6 @@ namespace Domain.Users
         public string ProfilePictureUrl { get; set; }
         public string? Bio { get; set; }
         public DateTime LastActive { get; set; }
-        public List<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
+        public List<GroupMembership> GroupMemberships { get; set; } = new List<GroupMembership>();
     }
 }

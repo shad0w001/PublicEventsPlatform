@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Participants;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,9 @@ namespace Domain.Events
     public class EventOrganizer
     {
         public Guid EventId { get; set; }
-        public Guid ActorId { get; set; }
+        public Guid ParticipantId { get; set; }
+
+        public Event Event { get; set; }
+        public Participant Participant { get; set; }
     }
 }

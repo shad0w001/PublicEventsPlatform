@@ -7,7 +7,7 @@ using Domain.Users;
 
 namespace Domain.Groups
 {
-    public class GroupMember
+    public class GroupMembership
     {
         public Guid GroupId { get; set; }
         public Guid UserId { get; set; }

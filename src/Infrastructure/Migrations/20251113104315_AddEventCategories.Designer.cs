@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251113104315_AddEventCategories")]
+    partial class AddEventCategories
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,6 +25,24 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Domain.Actors.Actor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("actors", "public");
+                });
 
             modelBuilder.Entity("Domain.Events.Event", b =>
                 {
@@ -74,28 +95,20 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ParticipantId")
+                    b.Property<Guid>("AttendeeId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CheckedInAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("EventId1")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("RegisteredAt")
+                    b.Property<DateTime?>("RegisteredAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
-                    b.HasKey("EventId", "ParticipantId");
-
-                    b.HasIndex("EventId1");
-
-                    b.HasIndex("ParticipantId");
+                    b.HasKey("EventId", "AttendeeId");
 
                     b.ToTable("event_attendees", "public");
                 });
@@ -129,17 +142,43 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ParticipantId")
+                    b.Property<Guid>("ActorId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("EventId", "ParticipantId");
-
-                    b.HasIndex("ParticipantId");
+                    b.HasKey("EventId", "ActorId");
 
                     b.ToTable("event_organizers", "public");
                 });
 
-            modelBuilder.Entity("Domain.Groups.GroupMembership", b =>
+            modelBuilder.Entity("Domain.Groups.Group", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("ProfileImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("groups", "public");
+                });
+
+            modelBuilder.Entity("Domain.Groups.GroupMember", b =>
                 {
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid");
@@ -158,30 +197,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("group_memberships", "public");
-                });
-
-            modelBuilder.Entity("Domain.Participants.Participant", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ParticipantType")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("participants", "public");
-
-                    b.HasDiscriminator<string>("ParticipantType").HasValue("Participant");
-
-                    b.UseTphMappingStrategy();
+                    b.ToTable("group_members", "public");
                 });
 
             modelBuilder.Entity("Domain.Plugins.Plugin", b =>
@@ -270,34 +286,18 @@ namespace Infrastructure.Migrations
                     b.ToTable("plugin_usages", "public");
                 });
 
-            modelBuilder.Entity("Domain.Groups.Group", b =>
-                {
-                    b.HasBaseType("Domain.Participants.Participant");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("ProfileImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasDiscriminator().HasValue("Group");
-                });
-
             modelBuilder.Entity("Domain.Users.User", b =>
                 {
-                    b.HasBaseType("Domain.Participants.Participant");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Bio")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -321,10 +321,12 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.HasKey("Id");
+
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasDiscriminator().HasValue("User");
+                    b.ToTable("users", "public");
                 });
 
             modelBuilder.Entity("Domain.Events.Event", b =>
@@ -403,22 +405,6 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.Events.Event", "Event")
-                        .WithMany()
-                        .HasForeignKey("EventId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Participants.Participant", "Participant")
-                        .WithMany("AttendedEvents")
-                        .HasForeignKey("ParticipantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Event");
-
-                    b.Navigation("Participant");
                 });
 
             modelBuilder.Entity("Domain.Events.EventCategory", b =>
@@ -433,27 +419,17 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Events.EventOrganizer", b =>
                 {
-                    b.HasOne("Domain.Events.Event", "Event")
+                    b.HasOne("Domain.Events.Event", null)
                         .WithMany("Organizers")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.Participants.Participant", "Participant")
-                        .WithMany("OrganizedEvents")
-                        .HasForeignKey("ParticipantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Event");
-
-                    b.Navigation("Participant");
                 });
 
-            modelBuilder.Entity("Domain.Groups.GroupMembership", b =>
+            modelBuilder.Entity("Domain.Groups.GroupMember", b =>
                 {
                     b.HasOne("Domain.Groups.Group", "Group")
-                        .WithMany("GroupMemberships")
+                        .WithMany("GroupMembers")
                         .HasForeignKey("GroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -515,11 +491,9 @@ namespace Infrastructure.Migrations
                     b.Navigation("Subcategories");
                 });
 
-            modelBuilder.Entity("Domain.Participants.Participant", b =>
+            modelBuilder.Entity("Domain.Groups.Group", b =>
                 {
-                    b.Navigation("AttendedEvents");
-
-                    b.Navigation("OrganizedEvents");
+                    b.Navigation("GroupMembers");
                 });
 
             modelBuilder.Entity("Domain.Plugins.Plugin", b =>
@@ -530,11 +504,6 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Plugins.PluginUsage", b =>
                 {
                     b.Navigation("Data");
-                });
-
-            modelBuilder.Entity("Domain.Groups.Group", b =>
-                {
-                    b.Navigation("GroupMemberships");
                 });
 
             modelBuilder.Entity("Domain.Users.User", b =>

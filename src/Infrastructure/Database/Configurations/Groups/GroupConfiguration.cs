@@ -13,9 +13,9 @@ namespace Infrastructure.Database.Configurations.Groups
     {
         public void Configure(EntityTypeBuilder<Group> builder)
         {
-            builder.ToTable("groups");
+            //builder.ToTable("groups");
 
-            builder.HasKey(g => g.Id);
+            //builder.HasKey(g => g.Id);
 
             builder.Property(g => g.Name)
                 .IsRequired()
@@ -27,7 +27,7 @@ namespace Infrastructure.Database.Configurations.Groups
             builder.Property(g => g.ProfileImageUrl)
                 .HasMaxLength(500);
 
-            builder.HasMany(g => g.GroupMembers)
+            builder.HasMany(g => g.GroupMemberships)
                 .WithOne(gm => gm.Group)
                 .HasForeignKey(gm => gm.GroupId);
         }
