@@ -23,6 +23,7 @@ namespace Infrastructure.Database
         public DbSet<EventAttendee> EventAttendees => Set<EventAttendee>();
         public DbSet<Plugin> Plugins => Set<Plugin>();
         public DbSet<PluginUsage> PluginUsages => Set<PluginUsage>();
+        public DbSet<EventCategory> EventCategories => Set<EventCategory>();
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

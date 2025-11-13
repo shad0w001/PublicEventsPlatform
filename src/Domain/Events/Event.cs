@@ -14,7 +14,7 @@ namespace Domain.Events
     public class Event : Entity
     {
         public string Title { get; set; }
-        public Guid CategoryId { get; set; }
+        public Guid? CategoryId { get; set; }
         public string Description { get; set; }
         public string? BannerImageUrl { get; set; }
         public DateTime StartTime { get; set; }
@@ -22,7 +22,7 @@ namespace Domain.Events
         public EventStatus Status { get; set; }
         public EventLocationType LocationType { get; set; }
 
-        public EventCategory Category { get; set; }
+        public EventCategory? Category { get; set; }
         public List<EventLocation> Locations { get; set; }
         public List<EventOrganizer> Organizers { get; set; }
         public List<EventAttendee> Attendees { get; set; }
