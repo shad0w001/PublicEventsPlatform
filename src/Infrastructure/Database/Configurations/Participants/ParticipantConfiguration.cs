@@ -21,12 +21,6 @@ namespace Infrastructure.Database.Configurations.Actors
 
             builder.Property(p => p.CreatedAt)
             .IsRequired();
-
-            // TPH mapping
-            builder
-                .HasDiscriminator<string>("ParticipantType")
-                .HasValue<User>("User")
-                .HasValue<Group>("Group");
         }
     }
 }
