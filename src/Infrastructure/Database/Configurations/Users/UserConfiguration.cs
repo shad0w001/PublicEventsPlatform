@@ -14,7 +14,7 @@ namespace Infrastructure.Database.Configurations.Users
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            //builder.ToTable("users");
+            builder.ToTable("users");
 
             //builder.HasKey(u => u.Id);
 

@@ -13,7 +13,7 @@ namespace Infrastructure.Database.Configurations.Groups
     {
         public void Configure(EntityTypeBuilder<Group> builder)
         {
-            //builder.ToTable("groups");
+            builder.ToTable("groups");
 
             //builder.HasKey(g => g.Id);
 
