@@ -70,21 +70,6 @@ namespace Infrastructure.Database.Configurations.Events
                 l.Property(x => x.Longitude);
                 l.Property(x => x.ExternalPlaceId).HasMaxLength(200);
             });
-
-            builder.HasMany(e => e.Organizers)
-                .WithOne()
-                .HasForeignKey(o => o.EventId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasMany(e => e.Attendees)
-                .WithOne()
-                .HasForeignKey(a => a.EventId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasMany(e => e.Plugins)
-                .WithOne()
-                .HasForeignKey(pu => pu.PluginId)
-                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Database.Configurations.Actors
+namespace Infrastructure.Database.Configurations.Participants
 {
     public class ParticipantConfiguration : IEntityTypeConfiguration<Participant>
     {
