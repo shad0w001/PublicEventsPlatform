@@ -17,8 +17,6 @@ namespace Infrastructure.Database.Configurations.Events
 
             builder.HasKey(ea => new { ea.EventId, ea.ParticipantId });
 
-            builder.Property(ea => ea.RegisteredAt).IsRequired();
-
             builder.HasOne(ea => ea.Event)
                 .WithMany(e => e.Attendees)
                 .HasForeignKey(ea => ea.EventId)

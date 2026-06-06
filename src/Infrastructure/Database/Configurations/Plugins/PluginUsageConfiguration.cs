@@ -38,6 +38,8 @@ namespace Infrastructure.Database.Configurations.Plugins
                 .WithOne(d => d.PluginUsage)
                 .HasForeignKey(d => d.PluginUsageId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(u => new { u.EventId, u.PluginId }).IsUnique();
         }
     }
 }
