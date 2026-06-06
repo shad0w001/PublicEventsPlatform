@@ -1,6 +1,5 @@
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +13,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+    await WaitForDatabaseAsync(dbContext);
+    await dbContext.Database.MigrateAsync();
 }
 
 // Configure the HTTP request pipeline.
@@ -43,6 +43,22 @@ app.MapGet("/weatherforecast", () =>
 .WithName("GetWeatherForecast");
 
 app.Run();
+
+static async Task WaitForDatabaseAsync(ApplicationDbContext dbContext, int maxAttempts = 30)
+{
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        if (await dbContext.Database.CanConnectAsync())
+        {
+            return;
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(1));
+    }
+
+    throw new InvalidOperationException(
+        "Could not connect to PostgreSQL. Ensure the Docker database is running (docker compose up -d).");
+}
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
