@@ -8,6 +8,23 @@ namespace InfrastructureTests;
 public class ApplicationDbContextTests
 {
     [Fact]
+    public void UserModel_Should_HaveUniqueIndexOnExternalSubjectId_When_ApplicationDbContextModelIsBuilt()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act
+        var entityType = context.Model.FindEntityType(typeof(User));
+        var index = entityType?.GetIndexes()
+            .SingleOrDefault(i => i.Properties.Any(p => p.Name == nameof(User.ExternalSubjectId)));
+
+        // Assert
+        Assert.NotNull(entityType);
+        Assert.NotNull(index);
+        Assert.True(index.IsUnique);
+    }
+
+    [Fact]
     public void EventAttendeeModel_Should_NotContainShadowEventId1_When_ApplicationDbContextModelIsBuilt()
     {
         // Arrange
@@ -28,14 +45,14 @@ public class ApplicationDbContextTests
         // Arrange
         var databaseName = Guid.NewGuid().ToString();
 
-        var user = new User
-        {
-            Username = "testuser",
-            Email = "test@example.com",
-            PasswordHash = "hash",
-            ProfilePictureUrl = "https://example.com/pic.jpg",
-            LastActive = DateTime.UtcNow
-        };
+        var user = User.CreateFromExternalIdentity(
+            externalSubjectId: "auth0|test-subject-id",
+            email: "test@example.com",
+            emailVerified: true,
+            displayName: null,
+            profilePictureUrl: "https://example.com/pic.jpg",
+            serviceRole: ServiceRole.User);
+        user.Username = "testuser";
 
         var evt = new Event
         {

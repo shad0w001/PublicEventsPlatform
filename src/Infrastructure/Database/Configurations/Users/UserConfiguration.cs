@@ -1,50 +1,52 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain;
-using Domain.Users;
+﻿using Domain.Users;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Infrastructure.Database.Configurations.Users
+namespace Infrastructure.Database.Configurations.Users;
+
+public class UserConfiguration : IEntityTypeConfiguration<User>
 {
-    public class UserConfiguration : IEntityTypeConfiguration<User>
+    public void Configure(EntityTypeBuilder<User> builder)
     {
-        public void Configure(EntityTypeBuilder<User> builder)
-        {
-            builder.ToTable("users");
+        builder.ToTable("users");
 
-            //builder.HasKey(u => u.Id);
+        builder.Property(u => u.ExternalSubjectId)
+            .IsRequired()
+            .HasMaxLength(255);
 
-            builder.Property(u => u.Username)
-                .IsRequired()
-                .HasMaxLength(100);
+        builder.HasIndex(u => u.ExternalSubjectId)
+            .IsUnique();
 
-            builder.Property(u => u.Email)
-                .IsRequired()
-                .HasMaxLength(255);
+        builder.Property(u => u.Username)
+            .HasMaxLength(100);
 
-            builder.HasIndex(u => u.Email)
-                .IsUnique();
+        builder.Property(u => u.Email)
+            .IsRequired()
+            .HasMaxLength(255);
 
-            builder.Property(u => u.PasswordHash)
-                .IsRequired();
+        builder.HasIndex(u => u.Email)
+            .IsUnique();
 
-            builder.Property(u => u.ProfilePictureUrl)
-                .HasMaxLength(500);
+        builder.Property(u => u.EmailVerified)
+            .IsRequired()
+            .HasDefaultValue(false);
 
-            builder.Property(u => u.Bio)
-                .HasMaxLength(1000);
+        builder.Property(u => u.ServiceRole)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(50);
 
-            builder.Property(u => u.LastActive)
-                .IsRequired();
+        builder.Property(u => u.ProfilePictureUrl)
+            .HasMaxLength(500);
 
-            // navigation property
-            builder.HasMany(u => u.GroupMemberships)
-                .WithOne(gm => gm.User)
-                .HasForeignKey(gm => gm.UserId);
-        }
+        builder.Property(u => u.Bio)
+            .HasMaxLength(1000);
+
+        builder.Property(u => u.LastActive)
+            .IsRequired();
+
+        builder.HasMany(u => u.GroupMemberships)
+            .WithOne(gm => gm.User)
+            .HasForeignKey(gm => gm.UserId);
     }
 }
