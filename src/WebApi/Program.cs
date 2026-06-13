@@ -1,12 +1,14 @@
+using Application;
+using Infrastructure;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using WebApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddOpenApi();
+builder.Services.AddApplication(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddWebApi();
 
 var app = builder.Build();
 
@@ -17,30 +19,19 @@ using (var scope = app.Services.CreateScope())
     await dbContext.Database.MigrateAsync();
 }
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
+
+    app.MapGet("/", () => Results.Redirect("/swagger"))
+        .ExcludeFromDescription();
 }
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 
 app.Run();
 
@@ -58,9 +49,4 @@ static async Task WaitForDatabaseAsync(ApplicationDbContext dbContext, int maxAt
 
     throw new InvalidOperationException(
         "Could not connect to PostgreSQL. Ensure the Docker database is running (docker compose up -d).");
-}
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 30 + (int)(TemperatureC / 0.5556);
 }
