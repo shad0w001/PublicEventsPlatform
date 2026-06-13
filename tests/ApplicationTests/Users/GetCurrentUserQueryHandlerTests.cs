@@ -206,11 +206,15 @@ public class GetCurrentUserQueryHandlerTests
 
     private static GetCurrentUserQueryHandler CreateHandler(
         ApplicationDbContext context,
-        IUserIdentityAccessor identity) =>
-        new(
+        IUserIdentityAccessor identity)
+    {
+        var currentUserService = new CurrentUserService(
             context,
             identity,
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+
+        return new GetCurrentUserQueryHandler(currentUserService, identity);
+    }
 
     private static ApplicationDbContext CreateContext(string databaseName)
     {

@@ -1,4 +1,5 @@
 using Domain.Events;
+using Domain.Groups;
 using Domain.Users;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,21 @@ public class ApplicationDbContextTests
         // Act
         var entityType = context.Model.FindEntityType(typeof(EventAttendee));
         var shadowProperty = entityType?.FindProperty("EventId1");
+
+        // Assert
+        Assert.NotNull(entityType);
+        Assert.Null(shadowProperty);
+    }
+
+    [Fact]
+    public void GroupMembershipModel_Should_NotContainShadowGroupId1_When_ApplicationDbContextModelIsBuilt()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act
+        var entityType = context.Model.FindEntityType(typeof(GroupMembership));
+        var shadowProperty = entityType?.FindProperty("GroupId1");
 
         // Assert
         Assert.NotNull(entityType);

@@ -26,10 +26,6 @@ namespace Infrastructure.Database.Configurations.Groups
 
             builder.Property(g => g.ProfileImageUrl)
                 .HasMaxLength(500);
-
-            builder.HasMany(g => g.GroupMemberships)
-                .WithOne(gm => gm.Group)
-                .HasForeignKey(gm => gm.GroupId);
         }
     }
 }

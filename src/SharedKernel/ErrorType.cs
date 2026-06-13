@@ -14,6 +14,7 @@ namespace SharedKernel
         Validation,
         Problem,
         NotFound,
-        Conflict
+        Conflict,
+        Forbidden
     }
 }
