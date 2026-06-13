@@ -14,6 +14,9 @@ public static class ClaimsPrincipalExtensions
     public static bool GetEmailVerified(this ClaimsPrincipal principal) =>
         bool.TryParse(principal.FindFirstValue(Auth0ClaimTypes.EmailVerified), out var verified) && verified;
 
+    public static string? GetPictureUrl(this ClaimsPrincipal principal) =>
+        principal.FindFirstValue(Auth0ClaimTypes.Picture);
+
     public static IEnumerable<string> GetRoles(this ClaimsPrincipal principal)
     {
         var claims = principal.FindAll(Auth0ClaimTypes.Roles).ToList();

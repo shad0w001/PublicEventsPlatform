@@ -1,8 +1,10 @@
 using Application.Abstractions.Authentication;
+using Application.Users;
 using Application.Users.GetMe;
 using Domain.Users;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Users;
 
@@ -25,7 +27,7 @@ public class GetCurrentUserQueryHandlerTests
         };
 
         await using var context = CreateContext(databaseName);
-        var handler = new GetCurrentUserQueryHandler(context, identity);
+        var handler = CreateHandler(context, identity);
 
         // Act
         var result = await handler.Handle(new GetCurrentUserQuery(), CancellationToken.None);
@@ -78,7 +80,7 @@ public class GetCurrentUserQueryHandlerTests
         };
 
         await using var context = CreateContext(databaseName);
-        var handler = new GetCurrentUserQueryHandler(context, identity);
+        var handler = CreateHandler(context, identity);
 
         // Act
         var result = await handler.Handle(new GetCurrentUserQuery(), CancellationToken.None);
@@ -111,7 +113,7 @@ public class GetCurrentUserQueryHandlerTests
         };
 
         await using var context = CreateContext(databaseName);
-        var handler = new GetCurrentUserQueryHandler(context, identity);
+        var handler = CreateHandler(context, identity);
 
         // Act
         var result = await handler.Handle(new GetCurrentUserQuery(), CancellationToken.None);
@@ -124,6 +126,91 @@ public class GetCurrentUserQueryHandlerTests
         var persistedUser = await verifyContext.Users.SingleAsync();
         Assert.Equal(ServiceRole.Admin, persistedUser.ServiceRole);
     }
+
+    [Fact]
+    public async Task GetCurrentUserQueryHandler_Should_PersistAuth0Picture_When_PictureInIdentity()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        const string pictureUrl = "https://example.com/avatar.jpg";
+        var identity = new FakeUserIdentityAccessor
+        {
+            IsAuthenticated = true,
+            ExternalSubjectId = "auth0|picture-user-subject",
+            Email = "picture@example.com",
+            EmailVerified = true,
+            ServiceRole = ServiceRole.User,
+            ProfilePictureUrl = pictureUrl
+        };
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new GetCurrentUserQuery(), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(pictureUrl, result.Value.ProfilePictureUrl);
+
+        await using var verifyContext = CreateContext(databaseName);
+        var persistedUser = await verifyContext.Users.SingleAsync();
+        Assert.Equal(pictureUrl, persistedUser.ProfilePictureUrl);
+    }
+
+    [Fact]
+    public async Task GetCurrentUserQueryHandler_Should_UpdatePicture_When_ExistingUserSyncsWithPicture()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        const string externalSubjectId = "auth0|sync-picture-subject";
+        const string pictureUrl = "https://example.com/avatar.jpg";
+
+        await using (var seedContext = CreateContext(databaseName))
+        {
+            var existingUser = User.CreateFromExternalIdentity(
+                externalSubjectId,
+                "user@example.com",
+                emailVerified: true,
+                profilePictureUrl: null,
+                DefaultAvatarUrl,
+                ServiceRole.User);
+            seedContext.Users.Add(existingUser);
+            await seedContext.SaveChangesAsync();
+        }
+
+        var identity = new FakeUserIdentityAccessor
+        {
+            IsAuthenticated = true,
+            ExternalSubjectId = externalSubjectId,
+            Email = "user@example.com",
+            EmailVerified = true,
+            ServiceRole = ServiceRole.User,
+            ProfilePictureUrl = pictureUrl
+        };
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new GetCurrentUserQuery(), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(pictureUrl, result.Value.ProfilePictureUrl);
+
+        await using var verifyContext = CreateContext(databaseName);
+        var persistedUser = await verifyContext.Users.SingleAsync();
+        Assert.Equal(pictureUrl, persistedUser.ProfilePictureUrl);
+    }
+
+    private static GetCurrentUserQueryHandler CreateHandler(
+        ApplicationDbContext context,
+        IUserIdentityAccessor identity) =>
+        new(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
 
     private static ApplicationDbContext CreateContext(string databaseName)
     {

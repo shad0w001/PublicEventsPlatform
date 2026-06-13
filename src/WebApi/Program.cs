@@ -6,7 +6,7 @@ using WebApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplication();
+builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddWebApi();
 
@@ -28,6 +28,7 @@ if (app.Environment.IsDevelopment())
         .ExcludeFromDescription();
 }
 
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

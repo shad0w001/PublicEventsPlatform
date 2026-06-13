@@ -22,5 +22,6 @@ public sealed class UserIdentityAccessor(IHttpContextAccessor httpContextAccesso
         ServiceRoleMapper.FromAuth0Roles(
             httpContextAccessor.HttpContext?.User.GetRoles() ?? []);
 
-    public string? ProfilePictureUrl => null;
+    public string? ProfilePictureUrl =>
+        httpContextAccessor.HttpContext?.User.GetPictureUrl();
 }

@@ -3,16 +3,16 @@ using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SharedKernel;
 
 namespace Application.Users.GetMe;
 
 public sealed class GetCurrentUserQueryHandler(
     IApplicationDbContext context,
-    IUserIdentityAccessor identityAccessor) : IQueryHandler<GetCurrentUserQuery, UserResponse>
+    IUserIdentityAccessor identityAccessor,
+    IOptions<UserProfileOptions> userProfileOptions) : IQueryHandler<GetCurrentUserQuery, UserResponse>
 {
-    private const string DefaultAvatarUrl = "/images/default-avatar.png";
-
     public async Task<Result<UserResponse>> Handle(
         GetCurrentUserQuery query,
         CancellationToken cancellationToken)
@@ -34,7 +34,7 @@ public sealed class GetCurrentUserQueryHandler(
                 identityAccessor.Email,
                 identityAccessor.EmailVerified,
                 identityAccessor.ProfilePictureUrl,
-                DefaultAvatarUrl,
+                userProfileOptions.Value.DefaultAvatarUrl,
                 identityAccessor.ServiceRole);
 
             context.Users.Add(user);
