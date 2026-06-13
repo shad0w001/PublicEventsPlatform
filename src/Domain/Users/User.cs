@@ -15,12 +15,24 @@ public class User : Participant
     public DateTime LastActive { get; set; }
     public List<GroupMembership> GroupMemberships { get; set; } = [];
 
+    public static string CreateDefaultUsernameFromEmail(string email)
+    {
+        var atIndex = email.IndexOf('@');
+        if (atIndex <= 0)
+        {
+            return "user";
+        }
+
+        var localPart = email[..atIndex].Trim();
+        return string.IsNullOrEmpty(localPart) ? "user" : localPart;
+    }
+
     public static User CreateFromExternalIdentity(
         string externalSubjectId,
         string email,
         bool emailVerified,
-        string? displayName,
         string? profilePictureUrl,
+        string defaultAvatarUrl,
         ServiceRole serviceRole)
     {
         return new User
@@ -28,8 +40,8 @@ public class User : Participant
             ExternalSubjectId = externalSubjectId,
             Email = email,
             EmailVerified = emailVerified,
-            Username = null,
-            ProfilePictureUrl = profilePictureUrl,
+            Username = CreateDefaultUsernameFromEmail(email),
+            ProfilePictureUrl = profilePictureUrl ?? defaultAvatarUrl,
             ServiceRole = serviceRole,
             LastActive = DateTime.UtcNow
         };
@@ -43,7 +55,12 @@ public class User : Participant
     {
         Email = email;
         EmailVerified = emailVerified;
-        ProfilePictureUrl = profilePictureUrl;
+
+        if (profilePictureUrl is not null)
+        {
+            ProfilePictureUrl = profilePictureUrl;
+        }
+
         ServiceRole = serviceRole;
         LastActive = DateTime.UtcNow;
     }

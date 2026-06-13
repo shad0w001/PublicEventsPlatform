@@ -7,6 +7,8 @@ namespace InfrastructureTests;
 
 public class ApplicationDbContextTests
 {
+    private const string DefaultAvatarUrl = "/images/default-avatar.png";
+
     [Fact]
     public void UserModel_Should_HaveUniqueIndexOnExternalSubjectId_When_ApplicationDbContextModelIsBuilt()
     {
@@ -49,9 +51,9 @@ public class ApplicationDbContextTests
             externalSubjectId: "auth0|test-subject-id",
             email: "test@example.com",
             emailVerified: true,
-            displayName: null,
             profilePictureUrl: "https://example.com/pic.jpg",
-            serviceRole: ServiceRole.User);
+            DefaultAvatarUrl,
+            ServiceRole.User);
         user.Username = "testuser";
 
         var evt = new Event

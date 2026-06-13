@@ -11,6 +11,8 @@ public sealed class GetCurrentUserQueryHandler(
     IApplicationDbContext context,
     IUserIdentityAccessor identityAccessor) : IQueryHandler<GetCurrentUserQuery, UserResponse>
 {
+    private const string DefaultAvatarUrl = "/images/default-avatar.png";
+
     public async Task<Result<UserResponse>> Handle(
         GetCurrentUserQuery query,
         CancellationToken cancellationToken)
@@ -31,8 +33,8 @@ public sealed class GetCurrentUserQueryHandler(
                 identityAccessor.ExternalSubjectId,
                 identityAccessor.Email,
                 identityAccessor.EmailVerified,
-                displayName: null,
                 identityAccessor.ProfilePictureUrl,
+                DefaultAvatarUrl,
                 identityAccessor.ServiceRole);
 
             context.Users.Add(user);

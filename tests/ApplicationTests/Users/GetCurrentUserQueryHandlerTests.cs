@@ -8,6 +8,8 @@ namespace ApplicationTests.Users;
 
 public class GetCurrentUserQueryHandlerTests
 {
+    private const string DefaultAvatarUrl = "/images/default-avatar.png";
+
     [Fact]
     public async Task GetCurrentUserQueryHandler_Should_CreateUser_When_ExternalSubjectNotFound()
     {
@@ -34,11 +36,15 @@ public class GetCurrentUserQueryHandlerTests
         Assert.Equal("new@example.com", result.Value.Email);
         Assert.True(result.Value.EmailVerified);
         Assert.Equal(ServiceRole.User, result.Value.ServiceRole);
+        Assert.Equal("new", result.Value.Username);
+        Assert.Equal(DefaultAvatarUrl, result.Value.ProfilePictureUrl);
 
         await using var verifyContext = CreateContext(databaseName);
         var persistedUser = await verifyContext.Users.SingleAsync();
         Assert.Equal("auth0|new-user-subject", persistedUser.ExternalSubjectId);
         Assert.Equal("new@example.com", persistedUser.Email);
+        Assert.Equal("new", persistedUser.Username);
+        Assert.Equal(DefaultAvatarUrl, persistedUser.ProfilePictureUrl);
     }
 
     [Fact]
@@ -54,9 +60,9 @@ public class GetCurrentUserQueryHandlerTests
                 externalSubjectId,
                 "old@example.com",
                 emailVerified: false,
-                displayName: null,
                 profilePictureUrl: null,
-                serviceRole: ServiceRole.User);
+                DefaultAvatarUrl,
+                ServiceRole.User);
             existingUser.Username = "existinguser";
             seedContext.Users.Add(existingUser);
             await seedContext.SaveChangesAsync();
