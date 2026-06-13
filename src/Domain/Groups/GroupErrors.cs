@@ -8,6 +8,10 @@ public static class GroupErrors
         "Groups.NotFound",
         $"The group with the Id = '{groupId}' was not found");
 
+    public static Error Deleted(Guid groupId) => Error.NotFound(
+        "Groups.Deleted",
+        $"The group with the Id = '{groupId}' has been deleted");
+
     public static Error Forbidden() => Error.Forbidden(
         "Groups.Forbidden",
         "You are not authorized to perform this action on this group");
@@ -15,6 +19,42 @@ public static class GroupErrors
     public static Error InsufficientPermissions() => Error.Forbidden(
         "Groups.InsufficientPermissions",
         "Your role does not permit this action");
+
+    public static readonly Error InvalidName = Error.Validation(
+        "Groups.InvalidName",
+        "Group name is required");
+
+    public static Error NameTooLong(int maxLength) => Error.Validation(
+        "Groups.NameTooLong",
+        $"Group name must not exceed {maxLength} characters");
+
+    public static readonly Error NotOpenForJoin = Error.Conflict(
+        "Groups.NotOpenForJoin",
+        "This group does not accept open join requests");
+
+    public static readonly Error ApplicationsNotRequired = Error.Conflict(
+        "Groups.ApplicationsNotRequired",
+        "This group does not require join applications");
+
+    public static readonly Error PendingApplicationExists = Error.Conflict(
+        "Groups.PendingApplicationExists",
+        "A pending join application already exists for this user");
+
+    public static readonly Error ReapplyCooldownActive = Error.Conflict(
+        "Groups.ReapplyCooldownActive",
+        "You must wait before submitting another join application");
+
+    public static readonly Error CannotTransferOwnershipToSelf = Error.Validation(
+        "Groups.CannotTransferOwnershipToSelf",
+        "Ownership cannot be transferred to yourself");
+
+    public static readonly Error CannotTransferOwnershipToNonMember = Error.Validation(
+        "Groups.CannotTransferOwnershipToNonMember",
+        "Ownership can only be transferred to an existing group member");
+
+    public static readonly Error NotOwner = Error.Forbidden(
+        "Groups.NotOwner",
+        "Only the group owner can perform this action");
 
     public static readonly Error AlreadyMember = Error.Conflict(
         "Groups.AlreadyMember",

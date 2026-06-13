@@ -14,6 +14,7 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
         public DbSet<User> Users => Set<User>();
         public DbSet<Group> Groups => Set<Group>();
         public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();
+        public DbSet<GroupJoinApplication> GroupJoinApplications => Set<GroupJoinApplication>();
         public DbSet<Event> Events => Set<Event>();
         public DbSet<EventOrganizer> EventOrganizers => Set<EventOrganizer>();
         public DbSet<EventAttendee> EventAttendees => Set<EventAttendee>();

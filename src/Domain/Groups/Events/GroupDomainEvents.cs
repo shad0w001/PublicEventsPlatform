@@ -6,7 +6,7 @@ public sealed record GroupCreated(Guid GroupId, Guid CreatedByUserId) : DomainEv
 
 public sealed record GroupProfileUpdated(Guid GroupId) : DomainEvent;
 
-public sealed record GroupJoinPolicyChanged(Guid GroupId) : DomainEvent;
+public sealed record GroupJoinPolicyChanged(Guid GroupId, GroupJoinPolicy NewPolicy) : DomainEvent;
 
 public sealed record GroupSoftDeleted(Guid GroupId) : DomainEvent;
 
