@@ -32,4 +32,34 @@ public static class GroupPermissions
             GroupMemberRole.Moderator => targetRole is GroupMemberRole.Member or GroupMemberRole.Organizer,
             _ => false
         };
+
+    public static bool CanRemoveMember(GroupMemberRole actorRole, GroupMemberRole targetRole, bool isSelfLeave)
+    {
+        if (isSelfLeave)
+        {
+            return targetRole is not GroupMemberRole.Owner;
+        }
+
+        if (targetRole is GroupMemberRole.Owner)
+        {
+            return false;
+        }
+
+        if (!CanManageMembers(actorRole))
+        {
+            return false;
+        }
+
+        return GetRoleRank(actorRole) > GetRoleRank(targetRole);
+    }
+
+    public static int GetRoleRank(GroupMemberRole role) => role switch
+    {
+        GroupMemberRole.Member => 0,
+        GroupMemberRole.Organizer => 1,
+        GroupMemberRole.Moderator => 2,
+        GroupMemberRole.Administrator => 3,
+        GroupMemberRole.Owner => 4,
+        _ => -1
+    };
 }

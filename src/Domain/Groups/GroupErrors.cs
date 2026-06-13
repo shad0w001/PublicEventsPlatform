@@ -63,4 +63,24 @@ public static class GroupErrors
     public static readonly Error OwnerCannotLeave = Error.Conflict(
         "Groups.OwnerCannotLeave",
         "The owner cannot leave the group without transferring ownership first");
+
+    public static readonly Error NotMember = Error.Forbidden(
+        "Groups.NotMember",
+        "You are not a member of this group");
+
+    public static readonly Error TargetNotMember = Error.NotFound(
+        "Groups.TargetNotMember",
+        "The specified user is not a member of this group");
+
+    public static readonly Error CannotChangeOwnerRole = Error.Conflict(
+        "Groups.CannotChangeOwnerRole",
+        "Owner role changes must use transfer ownership");
+
+    public static readonly Error CannotRemoveMember = Error.Forbidden(
+        "Groups.CannotRemoveMember",
+        "You cannot remove a member with this role");
+
+    public static readonly Error NoFieldsToUpdate = Error.Validation(
+        "Groups.NoFieldsToUpdate",
+        "At least one field must be provided to update the group");
 }

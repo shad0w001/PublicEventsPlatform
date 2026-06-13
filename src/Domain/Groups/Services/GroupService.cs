@@ -254,6 +254,79 @@ public static class GroupService
         return Result.Success();
     }
 
+    public static Result ChangeMemberRole(Group group, Guid targetUserId, GroupMemberRole newRole)
+    {
+        var deletedResult = EnsureNotDeleted(group);
+        if (deletedResult.IsFailure)
+        {
+            return deletedResult;
+        }
+
+        var membership = GetMembership(group, targetUserId);
+        if (membership is null)
+        {
+            return Result.Failure(GroupErrors.TargetNotMember);
+        }
+
+        if (membership.Role is GroupMemberRole.Owner || newRole is GroupMemberRole.Owner)
+        {
+            return Result.Failure(GroupErrors.CannotChangeOwnerRole);
+        }
+
+        if (membership.Role == newRole)
+        {
+            return Result.Success();
+        }
+
+        var previousRole = membership.Role;
+        membership.Role = newRole;
+
+        group.Raise(new GroupMemberRoleChanged(group.Id, targetUserId, previousRole, newRole));
+        return Result.Success();
+    }
+
+    public static Result LeaveOrRemoveMember(Group group, Guid actorUserId, Guid targetUserId)
+    {
+        var deletedResult = EnsureNotDeleted(group);
+        if (deletedResult.IsFailure)
+        {
+            return deletedResult;
+        }
+
+        var targetMembership = GetMembership(group, targetUserId);
+        if (targetMembership is null)
+        {
+            return Result.Failure(GroupErrors.TargetNotMember);
+        }
+
+        var isSelfLeave = actorUserId == targetUserId;
+
+        if (isSelfLeave)
+        {
+            if (targetMembership.Role is GroupMemberRole.Owner)
+            {
+                return Result.Failure(GroupErrors.OwnerCannotLeave);
+            }
+        }
+        else
+        {
+            var actorMembership = GetMembership(group, actorUserId);
+            if (actorMembership is null)
+            {
+                return Result.Failure(GroupErrors.NotMember);
+            }
+
+            if (!GroupPermissions.CanRemoveMember(actorMembership.Role, targetMembership.Role, isSelfLeave: false))
+            {
+                return Result.Failure(GroupErrors.CannotRemoveMember);
+            }
+        }
+
+        group.GroupMemberships.Remove(targetMembership);
+        group.Raise(new GroupMemberLeft(group.Id, targetUserId));
+        return Result.Success();
+    }
+
     public static Result TransferOwnership(Group group, Guid currentOwnerUserId, Guid newOwnerUserId)
     {
         var deletedResult = EnsureNotDeleted(group);

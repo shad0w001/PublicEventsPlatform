@@ -124,4 +124,32 @@ public class GroupPermissionsTests
         // Assert
         Assert.True(canDelete);
     }
+
+    [Fact]
+    public void GroupPermissions_Should_AllowRemoveMember_When_OwnerKicksMember()
+    {
+        // Arrange
+        var actor = GroupMemberRole.Owner;
+        var target = GroupMemberRole.Member;
+
+        // Act
+        var canRemove = GroupPermissions.CanRemoveMember(actor, target, isSelfLeave: false);
+
+        // Assert
+        Assert.True(canRemove);
+    }
+
+    [Fact]
+    public void GroupPermissions_Should_DenyRemoveMember_When_AdministratorKicksPeer()
+    {
+        // Arrange
+        var actor = GroupMemberRole.Administrator;
+        var target = GroupMemberRole.Administrator;
+
+        // Act
+        var canRemove = GroupPermissions.CanRemoveMember(actor, target, isSelfLeave: false);
+
+        // Assert
+        Assert.False(canRemove);
+    }
 }

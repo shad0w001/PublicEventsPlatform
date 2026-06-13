@@ -16,6 +16,9 @@ public static class ResultExtensions
             onSuccess: value => new OkObjectResult(value),
             onFailure: failure => ToProblemResult(failure));
 
+    public static IActionResult ToActionResult(this Result result) =>
+        result.IsSuccess ? new NoContentResult() : ToProblemResult(result);
+
     private static ObjectResult ToProblemResult(Result result)
     {
         var problemDetails = new ProblemDetails
