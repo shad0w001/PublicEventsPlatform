@@ -1,5 +1,6 @@
 using Domain.Groups;
 using Domain.Groups.Events;
+using Domain.Groups.Services;
 
 namespace DomainTests.Groups;
 
@@ -11,19 +12,19 @@ public class GroupSoftDeleteTests
     private static readonly DateTime UtcNow = new(2026, 6, 13, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void Group_Should_SetDeletedAtAndClearApplications_When_SoftDeleted()
+    public void GroupService_Should_SetDeletedAtAndClearApplications_When_SoftDeleted()
     {
         // Arrange
-        var group = Group.Create(
+        var group = GroupService.Create(
             "Test Org",
             "",
             GroupJoinPolicy.ApplicationRequired,
             CreatorId,
             DefaultImageUrl).Value.Group;
-        group.SubmitJoinApplication(ApplicantId, UtcNow);
+        GroupService.SubmitJoinApplication(group, ApplicantId, UtcNow);
 
         // Act
-        var result = group.SoftDelete();
+        var result = GroupService.SoftDelete(group);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -34,16 +35,16 @@ public class GroupSoftDeleteTests
     }
 
     [Fact]
-    public void Group_Should_BeIdempotent_When_SoftDeletedTwice()
+    public void GroupService_Should_BeIdempotent_When_SoftDeletedTwice()
     {
         // Arrange
-        var group = Group.Create("Test Org", "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl).Value.Group;
-        group.SoftDelete();
+        var group = GroupService.Create("Test Org", "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl).Value.Group;
+        GroupService.SoftDelete(group);
         var firstDeletedAt = group.DeletedAt;
         group.ClearDomainEvents();
 
         // Act
-        var result = group.SoftDelete();
+        var result = GroupService.SoftDelete(group);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -52,13 +53,13 @@ public class GroupSoftDeleteTests
     }
 
     [Fact]
-    public void Group_Should_RaiseSoftDeletedEvent_When_SoftDeleted()
+    public void GroupService_Should_RaiseSoftDeletedEvent_When_SoftDeleted()
     {
         // Arrange
-        var group = Group.Create("Test Org", "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl).Value.Group;
+        var group = GroupService.Create("Test Org", "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl).Value.Group;
 
         // Act
-        group.SoftDelete();
+        GroupService.SoftDelete(group);
 
         // Assert
         Assert.Contains(group.DomainEvents, e => e is GroupSoftDeleted);

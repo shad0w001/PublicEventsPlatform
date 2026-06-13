@@ -1,5 +1,6 @@
 using Domain.Groups;
 using Domain.Groups.Events;
+using Domain.Groups.Services;
 using SharedKernel;
 
 namespace DomainTests.Groups;
@@ -10,13 +11,13 @@ public class GroupCreateTests
     private static readonly Guid CreatorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     [Fact]
-    public void Group_Should_CreateWithOwnerMembership_When_InputIsValid()
+    public void GroupService_Should_CreateWithOwnerMembership_When_InputIsValid()
     {
         // Arrange
         const string name = "  Test Org  ";
 
         // Act
-        var result = Group.Create(
+        var result = GroupService.Create(
             name,
             description: null,
             GroupJoinPolicy.Open,
@@ -34,11 +35,11 @@ public class GroupCreateTests
     }
 
     [Fact]
-    public void Group_Should_RaiseGroupCreatedEvent_When_Created()
+    public void GroupService_Should_RaiseGroupCreatedEvent_When_Created()
     {
         // Arrange — valid create inputs
         // Act
-        var result = Group.Create("Test Org", "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl);
+        var result = GroupService.Create("Test Org", "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -48,13 +49,13 @@ public class GroupCreateTests
     }
 
     [Fact]
-    public void Group_Should_ReturnInvalidName_When_NameIsEmpty()
+    public void GroupService_Should_ReturnInvalidName_When_NameIsEmpty()
     {
         // Arrange
         const string name = "   ";
 
         // Act
-        var result = Group.Create(name, "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl);
+        var result = GroupService.Create(name, "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -62,13 +63,13 @@ public class GroupCreateTests
     }
 
     [Fact]
-    public void Group_Should_ReturnNameTooLong_When_NameExceedsMaxLength()
+    public void GroupService_Should_ReturnNameTooLong_When_NameExceedsMaxLength()
     {
         // Arrange
         var name = new string('a', GroupConstants.NameMaxLength + 1);
 
         // Act
-        var result = Group.Create(name, "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl);
+        var result = GroupService.Create(name, "", GroupJoinPolicy.Open, CreatorId, DefaultImageUrl);
 
         // Assert
         Assert.True(result.IsFailure);

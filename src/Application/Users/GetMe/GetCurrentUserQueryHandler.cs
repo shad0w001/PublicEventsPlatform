@@ -5,7 +5,7 @@ using SharedKernel;
 
 namespace Application.Users.GetMe;
 
-public sealed class GetCurrentUserQueryHandler(
+internal sealed class GetCurrentUserQueryHandler(
     ICurrentUserService currentUserService,
     IUserIdentityAccessor identityAccessor) : IQueryHandler<GetCurrentUserQuery, UserResponse>
 {

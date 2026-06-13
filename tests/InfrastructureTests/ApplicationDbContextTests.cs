@@ -1,6 +1,8 @@
 using Domain.Events;
 using Domain.Groups;
+using Domain.Groups.Services;
 using Domain.Users;
+using Domain.Users.Services;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
@@ -99,14 +101,14 @@ public class ApplicationDbContextTests
     {
         // Arrange
         var databaseName = Guid.NewGuid().ToString();
-        var owner = User.CreateFromExternalIdentity(
+        var owner = UserService.ProvisionFromExternalIdentity(
             "auth0|owner-subject",
             "owner@example.com",
             emailVerified: true,
             profilePictureUrl: null,
             DefaultAvatarUrl,
             ServiceRole.User);
-        var applicant = User.CreateFromExternalIdentity(
+        var applicant = UserService.ProvisionFromExternalIdentity(
             "auth0|applicant-subject",
             "applicant@example.com",
             emailVerified: true,
@@ -114,7 +116,7 @@ public class ApplicationDbContextTests
             DefaultAvatarUrl,
             ServiceRole.User);
 
-        var createResult = Group.Create(
+        var createResult = GroupService.Create(
             "Test Org",
             "",
             GroupJoinPolicy.ApplicationRequired,
@@ -123,7 +125,7 @@ public class ApplicationDbContextTests
         var group = createResult.Value.Group;
         var ownerMembership = createResult.Value.OwnerMembership;
         var submittedAt = new DateTime(2026, 6, 13, 12, 0, 0, DateTimeKind.Utc);
-        var application = group.SubmitJoinApplication(applicant.Id, submittedAt).Value;
+        var application = GroupService.SubmitJoinApplication(group, applicant.Id, submittedAt).Value;
 
         // Act
         await using (var context = CreateContext(databaseName))
@@ -158,7 +160,7 @@ public class ApplicationDbContextTests
         // Arrange
         var databaseName = Guid.NewGuid().ToString();
 
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             externalSubjectId: "auth0|test-subject-id",
             email: "test@example.com",
             emailVerified: true,

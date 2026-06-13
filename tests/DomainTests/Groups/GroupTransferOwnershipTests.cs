@@ -1,5 +1,6 @@
 using Domain.Groups;
 using Domain.Groups.Events;
+using Domain.Groups.Services;
 
 namespace DomainTests.Groups;
 
@@ -11,14 +12,14 @@ public class GroupTransferOwnershipTests
     private static readonly Guid OutsiderId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
     [Fact]
-    public void Group_Should_TransferOwnership_When_TargetIsMember()
+    public void GroupService_Should_TransferOwnership_When_TargetIsMember()
     {
         // Arrange
-        var group = Group.Create("Test Org", "", GroupJoinPolicy.Open, OwnerId, DefaultImageUrl).Value.Group;
+        var group = GroupService.Create("Test Org", "", GroupJoinPolicy.Open, OwnerId, DefaultImageUrl).Value.Group;
         group.GroupMemberships.Add(GroupMembership.Create(group.Id, MemberId, GroupMemberRole.Member));
 
         // Act
-        var result = group.TransferOwnership(OwnerId, MemberId);
+        var result = GroupService.TransferOwnership(group, OwnerId, MemberId);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -28,13 +29,13 @@ public class GroupTransferOwnershipTests
     }
 
     [Fact]
-    public void Group_Should_ReturnCannotTransferToSelf_When_TargetIsCurrentOwner()
+    public void GroupService_Should_ReturnCannotTransferToSelf_When_TargetIsCurrentOwner()
     {
         // Arrange
-        var group = Group.Create("Test Org", "", GroupJoinPolicy.Open, OwnerId, DefaultImageUrl).Value.Group;
+        var group = GroupService.Create("Test Org", "", GroupJoinPolicy.Open, OwnerId, DefaultImageUrl).Value.Group;
 
         // Act
-        var result = group.TransferOwnership(OwnerId, OwnerId);
+        var result = GroupService.TransferOwnership(group, OwnerId, OwnerId);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -42,13 +43,13 @@ public class GroupTransferOwnershipTests
     }
 
     [Fact]
-    public void Group_Should_ReturnCannotTransferToNonMember_When_TargetNotMember()
+    public void GroupService_Should_ReturnCannotTransferToNonMember_When_TargetNotMember()
     {
         // Arrange
-        var group = Group.Create("Test Org", "", GroupJoinPolicy.Open, OwnerId, DefaultImageUrl).Value.Group;
+        var group = GroupService.Create("Test Org", "", GroupJoinPolicy.Open, OwnerId, DefaultImageUrl).Value.Group;
 
         // Act
-        var result = group.TransferOwnership(OwnerId, OutsiderId);
+        var result = GroupService.TransferOwnership(group, OwnerId, OutsiderId);
 
         // Assert
         Assert.True(result.IsFailure);

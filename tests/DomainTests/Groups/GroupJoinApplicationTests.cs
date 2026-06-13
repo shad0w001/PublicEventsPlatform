@@ -1,5 +1,6 @@
 using Domain.Groups;
 using Domain.Groups.Events;
+using Domain.Groups.Services;
 
 namespace DomainTests.Groups;
 
@@ -12,13 +13,13 @@ public class GroupJoinApplicationTests
     private static readonly DateTime UtcNow = new(2026, 6, 13, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void Group_Should_CreatePendingApplication_When_SubmitJoinApplication()
+    public void GroupService_Should_CreatePendingApplication_When_SubmitJoinApplication()
     {
         // Arrange
         var group = CreateApplicationRequiredGroup();
 
         // Act
-        var result = group.SubmitJoinApplication(ApplicantId, UtcNow);
+        var result = GroupService.SubmitJoinApplication(group, ApplicantId, UtcNow);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -27,14 +28,14 @@ public class GroupJoinApplicationTests
     }
 
     [Fact]
-    public void Group_Should_ReturnPendingApplicationExists_When_DuplicatePendingSubmission()
+    public void GroupService_Should_ReturnPendingApplicationExists_When_DuplicatePendingSubmission()
     {
         // Arrange
         var group = CreateApplicationRequiredGroup();
-        group.SubmitJoinApplication(ApplicantId, UtcNow);
+        GroupService.SubmitJoinApplication(group, ApplicantId, UtcNow);
 
         // Act
-        var result = group.SubmitJoinApplication(ApplicantId, UtcNow);
+        var result = GroupService.SubmitJoinApplication(group, ApplicantId, UtcNow);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -42,15 +43,16 @@ public class GroupJoinApplicationTests
     }
 
     [Fact]
-    public void Group_Should_ReturnReapplyCooldownActive_When_RejectedWithinCooldown()
+    public void GroupService_Should_ReturnReapplyCooldownActive_When_RejectedWithinCooldown()
     {
         // Arrange
         var group = CreateApplicationRequiredGroup();
-        var application = group.SubmitJoinApplication(ApplicantId, UtcNow).Value;
-        group.RejectApplication(application.Id, ModeratorId, UtcNow);
+        var application = GroupService.SubmitJoinApplication(group, ApplicantId, UtcNow).Value;
+        GroupService.RejectApplication(group, application.Id, ModeratorId, UtcNow);
 
         // Act
-        var result = group.SubmitJoinApplication(
+        var result = GroupService.SubmitJoinApplication(
+            group,
             ApplicantId,
             UtcNow.AddMinutes(30));
 
@@ -60,15 +62,16 @@ public class GroupJoinApplicationTests
     }
 
     [Fact]
-    public void Group_Should_AllowReapply_When_CooldownHasElapsed()
+    public void GroupService_Should_AllowReapply_When_CooldownHasElapsed()
     {
         // Arrange
         var group = CreateApplicationRequiredGroup();
-        var application = group.SubmitJoinApplication(ApplicantId, UtcNow).Value;
-        group.RejectApplication(application.Id, ModeratorId, UtcNow);
+        var application = GroupService.SubmitJoinApplication(group, ApplicantId, UtcNow).Value;
+        GroupService.RejectApplication(group, application.Id, ModeratorId, UtcNow);
 
         // Act
-        var result = group.SubmitJoinApplication(
+        var result = GroupService.SubmitJoinApplication(
+            group,
             ApplicantId,
             UtcNow.AddHours(1));
 
@@ -78,14 +81,14 @@ public class GroupJoinApplicationTests
     }
 
     [Fact]
-    public void Group_Should_CreateMember_When_ApplicationApproved()
+    public void GroupService_Should_CreateMember_When_ApplicationApproved()
     {
         // Arrange
         var group = CreateApplicationRequiredGroup();
-        var application = group.SubmitJoinApplication(ApplicantId, UtcNow).Value;
+        var application = GroupService.SubmitJoinApplication(group, ApplicantId, UtcNow).Value;
 
         // Act
-        var result = group.ApproveApplication(application.Id, ModeratorId, UtcNow);
+        var result = GroupService.ApproveApplication(group, application.Id, ModeratorId, UtcNow);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -95,14 +98,14 @@ public class GroupJoinApplicationTests
     }
 
     [Fact]
-    public void Group_Should_RemoveApplication_When_CancelledByApplicant()
+    public void GroupService_Should_RemoveApplication_When_CancelledByApplicant()
     {
         // Arrange
         var group = CreateApplicationRequiredGroup();
-        var application = group.SubmitJoinApplication(ApplicantId, UtcNow).Value;
+        var application = GroupService.SubmitJoinApplication(group, ApplicantId, UtcNow).Value;
 
         // Act
-        var result = group.CancelApplication(application.Id, ApplicantId);
+        var result = GroupService.CancelApplication(group, application.Id, ApplicantId);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -111,7 +114,7 @@ public class GroupJoinApplicationTests
     }
 
     private static Group CreateApplicationRequiredGroup() =>
-        Group.Create(
+        GroupService.Create(
             "Test Org",
             "",
             GroupJoinPolicy.ApplicationRequired,

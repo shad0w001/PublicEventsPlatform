@@ -2,11 +2,12 @@ using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
 using Application.Users;
 using Domain.Users;
+using Domain.Users.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SharedKernel;
 
-namespace Application.Users;
+namespace Application.Users.Services;
 
 public sealed class CurrentUserService(
     IApplicationDbContext context,
@@ -27,7 +28,7 @@ public sealed class CurrentUserService(
 
         if (user is null)
         {
-            user = User.CreateFromExternalIdentity(
+            user = UserService.ProvisionFromExternalIdentity(
                 identityAccessor.ExternalSubjectId,
                 identityAccessor.Email,
                 identityAccessor.EmailVerified,
@@ -39,7 +40,8 @@ public sealed class CurrentUserService(
         }
         else
         {
-            user.SyncFromExternalIdentity(
+            UserService.SyncFromExternalIdentity(
+                user,
                 identityAccessor.Email,
                 identityAccessor.EmailVerified,
                 identityAccessor.ProfilePictureUrl,
