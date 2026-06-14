@@ -12,9 +12,9 @@ internal sealed class GetGroupQueryHandler(
     IApplicationDbContext context,
     IUserIdentityAccessor identityAccessor,
     ICurrentUserService currentUserService)
-    : IQueryHandler<GetGroupQuery, GroupPageResponse>
+    : IQueryHandler<GetGroupQuery, PublicGroupResponse>
 {
-    public async Task<Result<GroupPageResponse>> Handle(
+    public async Task<Result<PublicGroupResponse>> Handle(
         GetGroupQuery query,
         CancellationToken cancellationToken)
     {
@@ -36,12 +36,12 @@ internal sealed class GetGroupQueryHandler(
 
         if (group is null)
         {
-            return Result.Failure<GroupPageResponse>(GroupErrors.NotFound(query.GroupId));
+            return Result.Failure<PublicGroupResponse>(GroupErrors.NotFound(query.GroupId));
         }
 
         if (group.DeletedAt is not null)
         {
-            return Result.Failure<GroupPageResponse>(GroupErrors.Deleted(query.GroupId));
+            return Result.Failure<PublicGroupResponse>(GroupErrors.Deleted(query.GroupId));
         }
 
         GroupMemberRole? myRole = null;
@@ -59,7 +59,7 @@ internal sealed class GetGroupQueryHandler(
             }
         }
 
-        return new GroupPageResponse(
+        return new PublicGroupResponse(
             group.Id,
             group.Name,
             group.Description,

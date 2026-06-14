@@ -9,4 +9,5 @@ public sealed record PublicGroupResponse(
     GroupJoinPolicy JoinPolicy,
     string ProfileImageUrl,
     DateTime CreatedAt,
-    int MemberCount);
+    int MemberCount,
+    GroupMemberRole? MyRole);

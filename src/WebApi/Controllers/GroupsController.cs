@@ -5,6 +5,7 @@ using Application.Groups.CancelGroupJoinApplication;
 using Application.Groups.ChangeMemberRole;
 using Application.Groups.CreateGroup;
 using Application.Groups.DecideGroupJoinApplication;
+using Application.Groups.DeleteGroup;
 using Application.Groups.GetGroup;
 using Application.Groups.JoinGroup;
 using Application.Groups.ListGroupJoinApplications;
@@ -26,9 +27,10 @@ namespace WebApi.Controllers;
 [SwaggerTag("Groups")]
 public sealed class GroupsController(
     ICommandHandler<CreateGroupCommand, GroupResponse> createGroupHandler,
-    IQueryHandler<GetGroupQuery, GroupPageResponse> getGroupHandler,
+    IQueryHandler<GetGroupQuery, PublicGroupResponse> getGroupHandler,
     IQueryHandler<ListMyGroupsQuery, IReadOnlyList<MyGroupMembershipResponse>> listMyGroupsHandler,
     ICommandHandler<UpdateGroupCommand, GroupResponse> updateGroupHandler,
+    ICommandHandler<DeleteGroupCommand> deleteGroupHandler,
     IQueryHandler<ListGroupMembersQuery, IReadOnlyList<GroupMemberResponse>> listGroupMembersHandler,
     ICommandHandler<ChangeMemberRoleCommand> changeMemberRoleHandler,
     ICommandHandler<RemoveGroupMemberCommand> removeGroupMemberHandler,
@@ -90,7 +92,7 @@ public sealed class GroupsController(
             Authenticated members receive an additional `myRole` field; non-members and anonymous callers do not.
             Deleted groups return 404.
             """)]
-    [SwaggerResponse(StatusCodes.Status200OK, "Group page", typeof(GroupPageResponse))]
+    [SwaggerResponse(StatusCodes.Status200OK, "Group page", typeof(PublicGroupResponse))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Group not found or deleted", typeof(ProblemDetails))]
     public async Task<IActionResult> Get(Guid groupId, CancellationToken cancellationToken)
     {
@@ -125,6 +127,25 @@ public sealed class GroupsController(
             request.JoinPolicy);
 
         var result = await updateGroupHandler.Handle(command, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpDelete("{groupId:guid}")]
+    [SwaggerOperation(
+        Summary = "Soft-delete a group",
+        Description = """
+            Owner-only. Sets DeletedAt and clears pending join applications; memberships are retained for potential restore.
+            Returns 204 on success. Returns 404 if the group is missing or already deleted (HTTP is not idempotent).
+            Cancel future events and refund tickets are handled asynchronously in Phase 7.
+            """)]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Group soft-deleted")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified or insufficient permissions", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Group not found or already deleted", typeof(ProblemDetails))]
+    public async Task<IActionResult> Delete(Guid groupId, CancellationToken cancellationToken)
+    {
+        var result = await deleteGroupHandler.Handle(new DeleteGroupCommand(groupId), cancellationToken);
         return result.ToActionResult();
     }
 
