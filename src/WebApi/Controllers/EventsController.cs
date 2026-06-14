@@ -3,6 +3,7 @@ using Application.Abstractions.Messaging;
 using Application.Events;
 using Application.Events.CreateEvent;
 using Application.Events.GetEvent;
+using Application.Events.ListMyEvents;
 using Application.Events.PublishEvent;
 using Application.Events.UpdateEvent;
 using Domain.Events;
@@ -18,6 +19,7 @@ namespace WebApi.Controllers;
 [SwaggerTag("Events")]
 public sealed class EventsController(
     ICommandHandler<CreateEventCommand, EventSummaryResponse> createEventHandler,
+    IQueryHandler<ListMyEventsQuery, IReadOnlyList<MyEventListItemResponse>> listMyEventsHandler,
     IQueryHandler<GetEventQuery, GetEventResponse> getEventHandler,
     ICommandHandler<UpdateEventCommand, EventDetailResponse> updateEventHandler,
     ICommandHandler<PublishEventCommand, EventDetailResponse> publishEventHandler) : ControllerBase
@@ -47,6 +49,25 @@ public sealed class EventsController(
         }
 
         return Created($"/api/events/{result.Value.Id}", result.Value);
+    }
+
+    [Authorize]
+    [HttpGet("mine")]
+    [SwaggerOperation(
+        Summary = "List my manageable events",
+        Description = """
+            Returns non-deleted events the verified caller can edit: self-hosted, group-hosted (Organizer+),
+            or events where the caller is CreatedByUserId. Includes Draft, Published, and Cancelled.
+            Sorted by status (Draft, Published, Cancelled), then StartTime ascending, then CreatedAt descending.
+            Attending/RSVP events are not included (Phase 5). Returns 200 with an empty list when none match.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Manageable events", typeof(IReadOnlyList<MyEventListItemResponse>))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified", typeof(ProblemDetails))]
+    public async Task<IActionResult> ListMine(CancellationToken cancellationToken)
+    {
+        var result = await listMyEventsHandler.Handle(new ListMyEventsQuery(), cancellationToken);
+        return result.ToActionResult();
     }
 
     [HttpGet("{eventId:guid}")]
