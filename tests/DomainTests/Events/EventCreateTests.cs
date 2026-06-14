@@ -11,15 +11,16 @@ public class EventCreateTests
     {
         // Arrange
         var hostId = EventTestData.HostParticipantId;
+        const string title = "Summer Meetup";
 
         // Act
-        var result = EventService.Create(EventTier.Small, hostId);
+        var result = EventService.Create(EventTier.Small, title, hostId);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(EventTier.Small, result.Value.Event.Tier);
         Assert.Equal(EventStatus.Draft, result.Value.Event.Status);
-        Assert.Equal(string.Empty, result.Value.Event.Title);
+        Assert.Equal("Summer Meetup", result.Value.Event.Title);
         Assert.Equal(EventConstants.DraftEpochUtc, result.Value.Event.StartTime);
         Assert.Null(result.Value.Event.CreatedByUserId);
         Assert.Equal(hostId, result.Value.Organizer.ParticipantId);
@@ -33,7 +34,7 @@ public class EventCreateTests
         var hostId = EventTestData.HostParticipantId;
 
         // Act
-        var result = EventService.Create(EventTier.Big, hostId);
+        var result = EventService.Create(EventTier.Big, EventTestData.DefaultTitle, hostId);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -43,5 +44,19 @@ public class EventCreateTests
                  created.EventId == result.Value.Event.Id &&
                  created.HostParticipantId == hostId &&
                  created.Tier == EventTier.Big);
+    }
+
+    [Fact]
+    public void EventService_Should_ReturnInvalidTitle_When_TitleIsEmpty()
+    {
+        // Arrange
+        var hostId = EventTestData.HostParticipantId;
+
+        // Act
+        var result = EventService.Create(EventTier.Small, "   ", hostId);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.InvalidTitle", result.Error.Code);
     }
 }

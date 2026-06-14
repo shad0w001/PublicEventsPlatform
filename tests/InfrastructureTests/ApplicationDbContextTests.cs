@@ -170,7 +170,7 @@ public class ApplicationDbContextTests
             ServiceRole.User);
         user.Username = "testuser";
 
-        var createResult = EventService.Create(EventTier.Small, user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Test Event", user.Id);
         var evt = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

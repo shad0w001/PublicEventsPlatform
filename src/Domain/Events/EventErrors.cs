@@ -103,4 +103,12 @@ public static class EventErrors
     public static readonly Error NotPublished = Error.Conflict(
         "Events.NotPublished",
         "This action is only allowed on published events");
+
+    public static Error HostNotFound(Guid hostId) => Error.NotFound(
+        "Events.HostNotFound",
+        $"The host participant with the Id = '{hostId}' was not found");
+
+    public static readonly Error InsufficientHostPermissions = Error.Forbidden(
+        "Events.InsufficientHostPermissions",
+        "You are not authorized to create events for this host");
 }

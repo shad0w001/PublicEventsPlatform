@@ -6,12 +6,23 @@ namespace Domain.Events.Services;
 
 public static class EventService
 {
-    public static Result<(Event Event, EventOrganizer Organizer)> Create(EventTier tier, Guid hostParticipantId)
+    public static Result<(Event Event, EventOrganizer Organizer)> Create(
+        EventTier tier,
+        string title,
+        Guid hostParticipantId)
     {
+        var titleResult = ValidateTitle(title, required: true);
+        if (titleResult.IsFailure)
+        {
+            return Result.Failure<(Event, EventOrganizer)>(titleResult.Error);
+        }
+
+        var trimmedTitle = title.Trim();
+
         var @event = new Event
         {
             Tier = tier,
-            Title = string.Empty,
+            Title = trimmedTitle,
             Description = string.Empty,
             StartTime = EventConstants.DraftEpochUtc,
             EndTime = EventConstants.DraftEpochUtc,

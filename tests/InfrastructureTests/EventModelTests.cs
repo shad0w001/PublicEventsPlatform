@@ -67,7 +67,7 @@ public class EventModelTests
         // Arrange
         var databaseName = Guid.NewGuid().ToString();
         var hostParticipantId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        var createResult = EventService.Create(EventTier.Small, hostParticipantId);
+        var createResult = EventService.Create(EventTier.Small, "Persisted Event", hostParticipantId);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

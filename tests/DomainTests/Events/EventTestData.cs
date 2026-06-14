@@ -11,8 +11,10 @@ internal static class EventTestData
     internal static readonly Guid ActingUserId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
     internal const string ValidTimeZoneId = "Europe/Sofia";
 
+    internal const string DefaultTitle = "Test Event";
+
     internal static (Event Event, EventOrganizer Organizer) CreateDraft(EventTier tier = EventTier.Small) =>
-        EventService.Create(tier, HostParticipantId).Value;
+        EventService.Create(tier, DefaultTitle, HostParticipantId).Value;
 
     internal static void MakePublishReady(Event @event)
     {
