@@ -9,6 +9,7 @@ using Application.Groups.GetGroup;
 using Application.Groups.JoinGroup;
 using Application.Groups.ListGroupJoinApplications;
 using Application.Groups.ListGroupMembers;
+using Application.Groups.ListMyGroups;
 using Application.Groups.RemoveGroupMember;
 using Application.Groups.SubmitGroupJoinApplication;
 using Application.Groups.TransferOwnership;
@@ -26,6 +27,7 @@ namespace WebApi.Controllers;
 public sealed class GroupsController(
     ICommandHandler<CreateGroupCommand, GroupResponse> createGroupHandler,
     IQueryHandler<GetGroupQuery, GroupPageResponse> getGroupHandler,
+    IQueryHandler<ListMyGroupsQuery, IReadOnlyList<MyGroupMembershipResponse>> listMyGroupsHandler,
     ICommandHandler<UpdateGroupCommand, GroupResponse> updateGroupHandler,
     IQueryHandler<ListGroupMembersQuery, IReadOnlyList<GroupMemberResponse>> listGroupMembersHandler,
     ICommandHandler<ChangeMemberRoleCommand> changeMemberRoleHandler,
@@ -60,6 +62,24 @@ public sealed class GroupsController(
         }
 
         return result.ToCreatedResult(nameof(Get), new { groupId = result.Value.Id });
+    }
+
+    [Authorize]
+    [HttpGet("mine")]
+    [SwaggerOperation(
+        Summary = "List my group memberships",
+        Description = """
+            Returns all active groups the verified caller belongs to, with role and join date.
+            Soft-deleted organizations are excluded. Sorted by role rank (Owner first), then most recently joined.
+            Returns 200 with an empty list when the user has no memberships.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Memberships", typeof(IReadOnlyList<MyGroupMembershipResponse>))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified", typeof(ProblemDetails))]
+    public async Task<IActionResult> ListMine(CancellationToken cancellationToken)
+    {
+        var result = await listMyGroupsHandler.Handle(new ListMyGroupsQuery(), cancellationToken);
+        return result.ToActionResult();
     }
 
     [HttpGet("{groupId:guid}")]
