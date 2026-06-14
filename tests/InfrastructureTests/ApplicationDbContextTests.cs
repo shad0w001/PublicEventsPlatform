@@ -1,4 +1,5 @@
 using Domain.Events;
+using Domain.Events.Services;
 using Domain.Groups;
 using Domain.Groups.Services;
 using Domain.Users;
@@ -169,33 +170,28 @@ public class ApplicationDbContextTests
             ServiceRole.User);
         user.Username = "testuser";
 
-        var evt = new Event
-        {
-            Title = "Test Event",
-            Description = "Test description",
-            StartTime = DateTime.UtcNow,
-            EndTime = DateTime.UtcNow.AddHours(2),
-            Status = EventStatus.Draft,
-            LocationType = EventLocationType.Physical,
-            Locations = [],
-            Organizers = [],
-            Attendees = []
-        };
+        var createResult = EventService.Create(EventTier.Small, user.Id);
+        var evt = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        EventService.Update(
+            evt,
+            new EventUpdatePatch
+            {
+                Title = "Test Event",
+                Description = "Test description",
+                StartTime = DateTime.UtcNow,
+                EndTime = DateTime.UtcNow.AddHours(2)
+            },
+            user.Id);
 
         // Act
         await using (var context = CreateContext(databaseName))
         {
             context.Users.Add(user);
             context.Events.Add(evt);
+            context.EventOrganizers.Add(organizer);
             await context.SaveChangesAsync();
-
-            context.EventOrganizers.Add(new EventOrganizer
-            {
-                EventId = evt.Id,
-                ParticipantId = user.Id,
-                Event = evt,
-                Participant = user
-            });
 
             context.EventAttendees.Add(new EventAttendee
             {

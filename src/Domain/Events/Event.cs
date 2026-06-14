@@ -1,31 +1,31 @@
-﻿using Domain.Participants;
-using Domain.Events.EventLocations;
+﻿using Domain.Events.EventLocations;
 using Domain.Plugins;
 using SharedKernel;
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Domain.Events
+namespace Domain.Events;
+
+public class Event : Entity
 {
-    public class Event : Entity
-    {
-        public string Title { get; set; }
-        public Guid? CategoryId { get; set; }
-        public string Description { get; set; }
-        public string? BannerImageUrl { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
-        public EventStatus Status { get; set; }
-        public EventLocationType LocationType { get; set; }
+    public string Title { get; internal set; } = string.Empty;
+    public Guid? CategoryId { get; internal set; }
+    public string Description { get; internal set; } = string.Empty;
+    public string? BannerImageUrl { get; internal set; }
+    public DateTime StartTime { get; internal set; } = EventConstants.DraftEpochUtc;
+    public DateTime EndTime { get; internal set; } = EventConstants.DraftEpochUtc;
+    public EventStatus Status { get; internal set; } = EventStatus.Draft;
+    public EventLocationType LocationType { get; internal set; } = EventLocationType.Physical;
+    public EventTier Tier { get; internal set; }
+    public string? TimeZoneId { get; internal set; }
+    public AdmissionType? AdmissionType { get; internal set; }
+    public DateTime? PublishedAt { get; internal set; }
+    public DateTime? DeletedAt { get; internal set; }
+    public Guid? CreatedByUserId { get; internal set; }
 
-        public EventCategory? Category { get; set; }
-        public List<EventLocation> Locations { get; set; }
-        public List<EventOrganizer> Organizers { get; set; }
-        public List<EventAttendee> Attendees { get; set; }
-        public List<PluginUsage> Plugins { get; set; } = new();
-    }
+    public bool IsDeleted => DeletedAt is not null;
+
+    public EventCategory? Category { get; internal set; }
+    public List<EventLocation> Locations { get; internal set; } = [];
+    public List<EventOrganizer> Organizers { get; internal set; } = [];
+    public List<EventAttendee> Attendees { get; internal set; } = [];
+    public List<PluginUsage> Plugins { get; internal set; } = [];
 }

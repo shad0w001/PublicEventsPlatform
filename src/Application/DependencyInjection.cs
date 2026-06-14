@@ -1,5 +1,7 @@
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Messaging;
+using Application.Events;
+using Application.Events.Services;
 using Application.Groups;
 using Application.Groups.Services;
 using Application.Users;
@@ -21,8 +23,12 @@ public static class DependencyInjection
         services.Configure<GroupProfileOptions>(
             configuration.GetSection(GroupProfileOptions.SectionName));
 
+        services.Configure<EventOptions>(
+            configuration.GetSection(EventOptions.SectionName));
+
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<GroupAccessService>();
+        services.AddScoped<EventAccessService>();
 
         services.Scan(scan => scan
             .FromAssembliesOf(typeof(DependencyInjection))
