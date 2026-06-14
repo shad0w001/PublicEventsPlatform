@@ -47,6 +47,27 @@ public class ListMyEventsQueryHandlerTests
     }
 
     [Fact]
+    public async Task ListMyEventsQueryHandler_Should_IncludeBannerImageUrl_When_EventHasBanner()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|mine-banner", "banner-list@example.com");
+        const string bannerUrl = "/uploads/events/card.webp";
+        await SeedPublishedEventAsync(databaseName, identity, "Banner Event", bannerUrl: bannerUrl);
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new ListMyEventsQuery(), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value);
+        Assert.Equal(bannerUrl, result.Value[0].BannerImageUrl);
+    }
+
+    [Fact]
     public async Task ListMyEventsQueryHandler_Should_ReturnGroupHostedEvent_When_UserIsOrganizer()
     {
         // Arrange
@@ -246,7 +267,8 @@ public class ListMyEventsQueryHandlerTests
         FakeUserIdentityAccessor identity,
         string title = "Published Event",
         bool cancelled = false,
-        bool softDeleted = false)
+        bool softDeleted = false,
+        string? bannerUrl = null)
     {
         await using var context = CreateContext(databaseName);
         var currentUserService = new CurrentUserService(
@@ -261,6 +283,11 @@ public class ListMyEventsQueryHandlerTests
 
         var categoryId = SeedCategoryInContext(context);
         MakePublishReadyViaUpdate(@event, categoryId, user.Id);
+
+        if (bannerUrl is not null)
+        {
+            EventService.Update(@event, new EventUpdatePatch { BannerImageUrl = bannerUrl }, user.Id);
+        }
 
         if (softDeleted)
         {

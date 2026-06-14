@@ -1,7 +1,9 @@
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
+using Application.Abstractions.Media;
 using Infrastructure.Authentication;
 using Infrastructure.Database;
+using Infrastructure.Media;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +33,7 @@ public static class DependencyInjection
         services.AddAuthorization();
         services.AddHttpContextAccessor();
         services.AddScoped<IUserIdentityAccessor, UserIdentityAccessor>();
+        services.AddScoped<IMediaStorageService, LocalMediaStorageService>();
 
         return services;
     }

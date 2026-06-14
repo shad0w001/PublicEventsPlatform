@@ -8,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.PostConfigure<Application.Media.MediaOptions>(options =>
+    options.WebRootPath = builder.Environment.WebRootPath ?? string.Empty);
 builder.Services.AddWebApi();
 
 var app = builder.Build();

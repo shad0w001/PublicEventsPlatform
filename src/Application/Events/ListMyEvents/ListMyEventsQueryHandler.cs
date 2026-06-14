@@ -71,6 +71,7 @@ internal sealed class ListMyEventsQueryHandler(
                     hostParticipantId,
                     hostIsGroup,
                     hostDisplayNames.Names.GetValueOrDefault(hostParticipantId, "Host"),
+                    e.BannerImageUrl,
                     e.PublishedAt,
                     e.CreatedAt);
             })

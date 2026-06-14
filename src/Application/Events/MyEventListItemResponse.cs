@@ -12,5 +12,6 @@ public sealed record MyEventListItemResponse(
     Guid HostParticipantId,
     bool HostIsGroup,
     string HostDisplayName,
+    string? BannerImageUrl,
     DateTime? PublishedAt,
     DateTime CreatedAt);

@@ -1,4 +1,5 @@
 using Application.Abstractions.Authentication;
+using Application.Abstractions.Media;
 using Application.Abstractions.Messaging;
 using Application.Events;
 using Application.Events.CreateEvent;
@@ -6,10 +7,12 @@ using Application.Events.GetEvent;
 using Application.Events.ListMyEvents;
 using Application.Events.PublishEvent;
 using Application.Events.UpdateEvent;
+using Application.Events.UploadEventBanner;
 using Domain.Events;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using SharedKernel;
 using WebApi.Extensions;
 
 namespace WebApi.Controllers;
@@ -22,7 +25,8 @@ public sealed class EventsController(
     IQueryHandler<ListMyEventsQuery, IReadOnlyList<MyEventListItemResponse>> listMyEventsHandler,
     IQueryHandler<GetEventQuery, GetEventResponse> getEventHandler,
     ICommandHandler<UpdateEventCommand, EventDetailResponse> updateEventHandler,
-    ICommandHandler<PublishEventCommand, EventDetailResponse> publishEventHandler) : ControllerBase
+    ICommandHandler<PublishEventCommand, EventDetailResponse> publishEventHandler,
+    ICommandHandler<UploadEventBannerCommand, EventDetailResponse> uploadEventBannerHandler) : ControllerBase
 {
     [Authorize]
     [HttpPost]
@@ -123,6 +127,42 @@ public sealed class EventsController(
             request.AdmissionType);
 
         var result = await updateEventHandler.Handle(command, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpPost("{eventId:guid}/banner")]
+    [Consumes("multipart/form-data")]
+    [SwaggerOperation(
+        Summary = "Upload event banner image",
+        Description = """
+            Uploads a banner image for a draft or published event. Requires verified email and edit permission.
+            Accepts JPEG, PNG, or WebP up to profile limits; stored as WebP under /uploads/events/.
+            Only updates bannerImageUrl; other event fields are unchanged. Optional during the creation wizard.
+            Returns 200 with full event detail including the new banner URL.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Banner uploaded", typeof(EventDetailResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid or missing file", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified or insufficient permissions", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Event not found or deleted", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Cancelled event cannot be modified", typeof(ProblemDetails))]
+    public async Task<IActionResult> UploadBanner(
+        Guid eventId,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file.Length == 0)
+        {
+            return Result.Failure<EventDetailResponse>(MediaErrors.EmptyFile).ToActionResult();
+        }
+
+        await using var stream = file.OpenReadStream();
+        var upload = new MediaUploadRequest(stream, file.ContentType, file.Length, file.FileName);
+        var result = await uploadEventBannerHandler.Handle(
+            new UploadEventBannerCommand(eventId, upload),
+            cancellationToken);
+
         return result.ToActionResult();
     }
 
