@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using SharedKernel;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.Processing;
 
 namespace Infrastructure.Media;
 
@@ -30,7 +29,7 @@ internal sealed class LocalMediaStorageService(IOptions<MediaOptions> options) :
 
         if (upload.ContentLength > profile.MaxBytes)
         {
-            return Result.Failure<string>(MediaErrors.FileTooLarge(profile.MaxBytes));
+            return Result.Failure<string>(MediaErrors.FileTooLarge(profile.MaxMegabytes));
         }
 
         if (!IsAllowedContentType(upload.ContentType, profile.AllowedContentTypes))
@@ -58,11 +57,7 @@ internal sealed class LocalMediaStorageService(IOptions<MediaOptions> options) :
         {
             if (image.Width > profile.MaxWidth || image.Height > profile.MaxHeight)
             {
-                image.Mutate(ctx => ctx.Resize(new ResizeOptions
-                {
-                    Mode = ResizeMode.Max,
-                    Size = new Size(profile.MaxWidth, profile.MaxHeight)
-                }));
+                return Result.Failure<string>(MediaErrors.DimensionsTooLarge(profile.MaxWidth, profile.MaxHeight));
             }
 
             var relativeUrl = BuildRelativeUrl(purpose, entityId);

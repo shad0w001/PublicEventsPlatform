@@ -25,14 +25,14 @@ public class LocalMediaStorageServiceTests : IDisposable
             {
                 ["EventBanner"] = new()
                 {
-                    MaxBytes = 5_242_880,
+                    MaxMegabytes = 5,
                     MaxWidth = 1920,
                     MaxHeight = 1080,
                     AllowedContentTypes = ["image/jpeg", "image/png", "image/webp"]
                 },
                 ["GroupProfile"] = new()
                 {
-                    MaxBytes = 2_097_152,
+                    MaxMegabytes = 2,
                     MaxWidth = 800,
                     MaxHeight = 800,
                     AllowedContentTypes = ["image/jpeg", "image/png", "image/webp"]
@@ -67,7 +67,7 @@ public class LocalMediaStorageServiceTests : IDisposable
             {
                 ["GroupProfile"] = new()
                 {
-                    MaxBytes = 100,
+                    MaxMegabytes = 0,
                     MaxWidth = 800,
                     MaxHeight = 800,
                     AllowedContentTypes = ["image/jpeg"]
@@ -86,6 +86,7 @@ public class LocalMediaStorageServiceTests : IDisposable
         // Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Media.FileTooLarge", result.Error.Code);
+        Assert.Contains("0 MB", result.Error.Message);
     }
 
     [Fact]
@@ -132,7 +133,7 @@ public class LocalMediaStorageServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task LocalMediaStorageService_Should_ResizeImage_When_DimensionsExceedProfileMax()
+    public async Task LocalMediaStorageService_Should_ReturnDimensionsTooLarge_When_DimensionsExceedProfileMax()
     {
         // Arrange
         var entityId = Guid.NewGuid();
@@ -146,11 +147,9 @@ public class LocalMediaStorageServiceTests : IDisposable
             CancellationToken.None);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        var physicalPath = Path.Combine(_webRoot, result.Value.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-        using var saved = await Image.LoadAsync(physicalPath);
-        Assert.True(saved.Width <= 1920);
-        Assert.True(saved.Height <= 1080);
+        Assert.True(result.IsFailure);
+        Assert.Equal("Media.DimensionsTooLarge", result.Error.Code);
+        Assert.Contains("1920×1080", result.Error.Message);
     }
 
     [Fact]

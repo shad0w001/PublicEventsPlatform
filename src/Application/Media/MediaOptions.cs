@@ -15,7 +15,9 @@ public sealed class MediaOptions
 
 public sealed class MediaProfileOptions
 {
-    public long MaxBytes { get; init; }
+    public int MaxMegabytes { get; init; }
+
+    public long MaxBytes => MaxMegabytes * 1024L * 1024L;
 
     public int MaxWidth { get; init; }
 
