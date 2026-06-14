@@ -9,6 +9,7 @@ public sealed record EventDetailResponse(
     string Description,
     string? BannerImageUrl,
     Guid? CategoryId,
+    string? CategoryName,
     DateTime StartTime,
     DateTime EndTime,
     string? TimeZoneId,

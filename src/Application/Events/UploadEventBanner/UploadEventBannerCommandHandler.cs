@@ -84,6 +84,11 @@ internal sealed class UploadEventBannerCommandHandler(
 
         await mediaStorageService.TryDeleteLocalFileAsync(previousBannerUrl, cancellationToken);
 
-        return EventMapping.ToDetailResponse(@event, editAccess);
+        var categoryName = await EventCategoryLookup.ResolveNameAsync(
+            context,
+            @event.CategoryId,
+            cancellationToken);
+
+        return EventMapping.ToDetailResponse(@event, editAccess, categoryName);
     }
 }

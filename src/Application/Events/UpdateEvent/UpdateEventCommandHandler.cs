@@ -96,7 +96,12 @@ internal sealed class UpdateEventCommandHandler(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return EventMapping.ToDetailResponse(@event, editAccess);
+        var categoryName = await EventCategoryLookup.ResolveNameAsync(
+            context,
+            @event.CategoryId,
+            cancellationToken);
+
+        return EventMapping.ToDetailResponse(@event, editAccess, categoryName);
     }
 
     private static bool HasAnyField(UpdateEventCommand command) =>

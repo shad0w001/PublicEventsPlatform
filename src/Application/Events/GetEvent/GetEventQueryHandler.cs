@@ -71,9 +71,14 @@ internal sealed class GetEventQueryHandler(
             return Result.Failure<GetEventResponse>(EventErrors.NotFound(eventId));
         }
 
+        var categoryName = await EventCategoryLookup.ResolveNameAsync(
+            context,
+            @event.CategoryId,
+            cancellationToken);
+
         return new GetEventResponse(
             Public: null,
-            EditDetail: EventMapping.ToDetailResponse(@event, editAccessResult.Value),
+            EditDetail: EventMapping.ToDetailResponse(@event, editAccessResult.Value, categoryName),
             CanEdit: true);
     }
 
@@ -95,9 +100,17 @@ internal sealed class GetEventQueryHandler(
 
                 if (editAccessResult.IsSuccess)
                 {
+                    var editorCategoryName = await EventCategoryLookup.ResolveNameAsync(
+                        context,
+                        @event.CategoryId,
+                        cancellationToken);
+
                     return new GetEventResponse(
                         Public: null,
-                        EditDetail: EventMapping.ToDetailResponse(@event, editAccessResult.Value),
+                        EditDetail: EventMapping.ToDetailResponse(
+                            @event,
+                            editAccessResult.Value,
+                            editorCategoryName),
                         CanEdit: true);
                 }
             }
@@ -114,7 +127,10 @@ internal sealed class GetEventQueryHandler(
             hostIsGroup,
             cancellationToken);
 
-        var categoryName = await ResolveCategoryNameAsync(@event.CategoryId, cancellationToken);
+        var categoryName = await EventCategoryLookup.ResolveNameAsync(
+            context,
+            @event.CategoryId,
+            cancellationToken);
 
         var publicResponse = EventMapping.ToPublicResponse(
             @event,
@@ -158,21 +174,5 @@ internal sealed class GetEventQueryHandler(
         }
 
         return UserService.CreateDefaultUsernameFromEmail(user.Email);
-    }
-
-    private async Task<string?> ResolveCategoryNameAsync(
-        Guid? categoryId,
-        CancellationToken cancellationToken)
-    {
-        if (categoryId is null)
-        {
-            return null;
-        }
-
-        return await context.EventCategories
-            .AsNoTracking()
-            .Where(c => c.Id == categoryId.Value)
-            .Select(c => c.Name)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 }

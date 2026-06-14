@@ -6,7 +6,10 @@ namespace Application.Events;
 
 internal static class EventMapping
 {
-    public static EventDetailResponse ToDetailResponse(Event @event, EventEditAccess editAccess) =>
+    public static EventDetailResponse ToDetailResponse(
+        Event @event,
+        EventEditAccess editAccess,
+        string? categoryName) =>
         new(
             @event.Id,
             @event.Tier,
@@ -14,6 +17,7 @@ internal static class EventMapping
             @event.Description,
             @event.BannerImageUrl,
             @event.CategoryId,
+            categoryName,
             @event.StartTime,
             @event.EndTime,
             @event.TimeZoneId,

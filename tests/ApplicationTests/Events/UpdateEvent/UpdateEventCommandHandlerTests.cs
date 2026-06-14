@@ -73,6 +73,7 @@ public class UpdateEventCommandHandlerTests
         Assert.Equal("Keep This Title", result.Value.Title);
         Assert.Equal("Screen 2 description", result.Value.Description);
         Assert.Equal(categoryId, result.Value.CategoryId);
+        Assert.Equal("Music", result.Value.CategoryName);
     }
 
     [Fact]

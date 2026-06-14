@@ -41,6 +41,7 @@ public class PublishEventCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(EventStatus.Published, result.Value.Status);
         Assert.NotNull(result.Value.PublishedAt);
+        Assert.Equal("Music", result.Value.CategoryName);
     }
 
     [Fact]

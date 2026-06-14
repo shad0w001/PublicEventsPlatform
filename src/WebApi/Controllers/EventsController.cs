@@ -2,7 +2,9 @@ using Application.Abstractions.Authentication;
 using Application.Abstractions.Media;
 using Application.Abstractions.Messaging;
 using Application.Events;
+using Application.Events.CancelEvent;
 using Application.Events.CreateEvent;
+using Application.Events.DeleteEvent;
 using Application.Events.GetEvent;
 using Application.Events.ListMyEvents;
 using Application.Events.PublishEvent;
@@ -26,7 +28,9 @@ public sealed class EventsController(
     IQueryHandler<GetEventQuery, GetEventResponse> getEventHandler,
     ICommandHandler<UpdateEventCommand, EventDetailResponse> updateEventHandler,
     ICommandHandler<PublishEventCommand, EventDetailResponse> publishEventHandler,
-    ICommandHandler<UploadEventBannerCommand, EventDetailResponse> uploadEventBannerHandler) : ControllerBase
+    ICommandHandler<UploadEventBannerCommand, EventDetailResponse> uploadEventBannerHandler,
+    ICommandHandler<CancelEventCommand> cancelEventHandler,
+    ICommandHandler<DeleteEventCommand> deleteEventHandler) : ControllerBase
 {
     [Authorize]
     [HttpPost]
@@ -186,6 +190,46 @@ public sealed class EventsController(
     public async Task<IActionResult> Publish(Guid eventId, CancellationToken cancellationToken)
     {
         var result = await publishEventHandler.Handle(new PublishEventCommand(eventId), cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpPost("{eventId:guid}/cancel")]
+    [SwaggerOperation(
+        Summary = "Cancel a published event",
+        Description = """
+            Sets event status to Cancelled. Requires verified email and edit permission (host, creator, or group Organizer+).
+            Only published events can be cancelled; use DELETE for draft events. Refunds and attendee notifications are async (Phase 7).
+            Returns 204 on success.
+            """)]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Event cancelled")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified or insufficient permissions", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Event not found or deleted", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Event is not published (draft or already cancelled)", typeof(ProblemDetails))]
+    public async Task<IActionResult> Cancel(Guid eventId, CancellationToken cancellationToken)
+    {
+        var result = await cancelEventHandler.Handle(new CancelEventCommand(eventId), cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpDelete("{eventId:guid}")]
+    [SwaggerOperation(
+        Summary = "Soft-delete a draft event",
+        Description = """
+            Soft-deletes a draft event (sets DeletedAt). Requires verified email and edit permission.
+            Published or cancelled events cannot be deleted; use POST .../cancel for live events. Returns 204 on success;
+            404 if already deleted.
+            """)]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Draft event deleted")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified or insufficient permissions", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Event not found or already deleted", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Event is not a draft", typeof(ProblemDetails))]
+    public async Task<IActionResult> Delete(Guid eventId, CancellationToken cancellationToken)
+    {
+        var result = await deleteEventHandler.Handle(new DeleteEventCommand(eventId), cancellationToken);
         return result.ToActionResult();
     }
 }

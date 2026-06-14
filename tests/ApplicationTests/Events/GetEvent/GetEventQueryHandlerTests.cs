@@ -146,6 +146,7 @@ public class GetEventQueryHandlerTests
         Assert.True(result.Value.CanEdit);
         Assert.Equal(eventId, result.Value.EditDetail!.Id);
         Assert.Equal(EventStatus.Published, result.Value.EditDetail.Status);
+        Assert.Equal("Music", result.Value.EditDetail.CategoryName);
     }
 
     [Fact]
