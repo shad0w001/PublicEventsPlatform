@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace WebApi;
 
@@ -15,6 +16,17 @@ public static class DependencyInjection
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Public Events Platform API",
+                Version = "v1",
+                Description =
+                    "Thesis backend for public events from small gatherings to conferences. " +
+                    "Auth0 JWT; groups and events are rolled out by phase."
+            });
+
+            options.EnableAnnotations();
+
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",

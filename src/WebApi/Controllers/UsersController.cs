@@ -4,12 +4,14 @@ using Application.Users.GetMe;
 using Application.Users.ListMyJoinApplications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using WebApi.Extensions;
 
 namespace WebApi.Controllers;
 
 [ApiController]
 [Route("api/users")]
+[SwaggerTag("Users")]
 public sealed class UsersController(
     IQueryHandler<GetCurrentUserQuery, UserResponse> getMeHandler,
     IQueryHandler<ListMyJoinApplicationsQuery, IReadOnlyList<MyJoinApplicationResponse>> listMyApplicationsHandler)
@@ -17,6 +19,14 @@ public sealed class UsersController(
 {
     [Authorize]
     [HttpGet("me")]
+    [SwaggerOperation(
+        Summary = "Get current user profile",
+        Description = """
+            Returns the local user row for the JWT subject, provisioning or syncing from Auth0 claims on first call.
+            Does not require verified email. Includes email, verification flag, username, bio, avatar, and service role.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Current user", typeof(UserResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
         var result = await getMeHandler.Handle(new GetCurrentUserQuery(), cancellationToken);
@@ -25,6 +35,15 @@ public sealed class UsersController(
 
     [Authorize]
     [HttpGet("me/applications")]
+    [SwaggerOperation(
+        Summary = "List my group join applications",
+        Description = """
+            Returns all join applications submitted by the caller across every group, newest first.
+            Requires verified email. Each item includes group id and name for navigation.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Applications", typeof(IReadOnlyList<MyJoinApplicationResponse>))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified", typeof(ProblemDetails))]
     public async Task<IActionResult> ListMyApplications(CancellationToken cancellationToken)
     {
         var result = await listMyApplicationsHandler.Handle(new ListMyJoinApplicationsQuery(), cancellationToken);
