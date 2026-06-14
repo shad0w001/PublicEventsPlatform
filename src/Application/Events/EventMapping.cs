@@ -27,6 +27,29 @@ internal static class EventMapping
             @event.PublishedAt,
             @event.Locations.Select(ToLocationResponse).ToList());
 
+    public static PublicEventResponse ToPublicResponse(
+        Event @event,
+        string hostDisplayName,
+        bool hostIsGroup,
+        string? categoryName) =>
+        new(
+            @event.Tier,
+            @event.Title,
+            @event.Description,
+            @event.BannerImageUrl,
+            @event.CategoryId,
+            categoryName,
+            @event.StartTime,
+            @event.EndTime,
+            @event.TimeZoneId,
+            @event.AdmissionType,
+            @event.Status,
+            @event.LocationType,
+            @event.PublishedAt,
+            hostDisplayName,
+            hostIsGroup,
+            @event.Locations.Select(ToLocationResponse).ToList());
+
     public static EventLocation ToDomainLocation(EventLocationResponse location) =>
         new()
         {

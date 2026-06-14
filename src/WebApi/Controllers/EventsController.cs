@@ -2,6 +2,7 @@ using Application.Abstractions.Authentication;
 using Application.Abstractions.Messaging;
 using Application.Events;
 using Application.Events.CreateEvent;
+using Application.Events.GetEvent;
 using Application.Events.PublishEvent;
 using Application.Events.UpdateEvent;
 using Domain.Events;
@@ -17,6 +18,7 @@ namespace WebApi.Controllers;
 [SwaggerTag("Events")]
 public sealed class EventsController(
     ICommandHandler<CreateEventCommand, EventSummaryResponse> createEventHandler,
+    IQueryHandler<GetEventQuery, GetEventResponse> getEventHandler,
     ICommandHandler<UpdateEventCommand, EventDetailResponse> updateEventHandler,
     ICommandHandler<PublishEventCommand, EventDetailResponse> publishEventHandler) : ControllerBase
 {
@@ -45,6 +47,23 @@ public sealed class EventsController(
         }
 
         return Created($"/api/events/{result.Value.Id}", result.Value);
+    }
+
+    [HttpGet("{eventId:guid}")]
+    [SwaggerOperation(
+        Summary = "Get an event (public page or editor view)",
+        Description = """
+            Anonymous access allowed for published and cancelled events (PublicEventResponse).
+            Draft events return 404 unless the caller is an editor (EditDetail only).
+            Eligible editors receive EditDetail only (EventDetailResponse), never both public and detail.
+            Deleted events return 404. Draft startTime/endTime may be Unix epoch until wizard screen 4 is saved.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Event view", typeof(GetEventResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Event not found, deleted, or draft hidden", typeof(ProblemDetails))]
+    public async Task<IActionResult> Get(Guid eventId, CancellationToken cancellationToken)
+    {
+        var result = await getEventHandler.Handle(new GetEventQuery(eventId), cancellationToken);
+        return result.ToActionResult();
     }
 
     [Authorize]
