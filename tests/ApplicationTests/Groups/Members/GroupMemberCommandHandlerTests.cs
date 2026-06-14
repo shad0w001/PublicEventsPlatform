@@ -76,6 +76,32 @@ public class GroupMemberCommandHandlerTests
     }
 
     [Fact]
+    public async Task ChangeMemberRoleCommandHandler_Should_ReturnCannotDemoteSelf_When_ActorDemotesSelf()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var owner = CreateUser("auth0|demote-owner", "demote-owner@example.com");
+        var group = SeedGroupWithMembers(databaseName, owner, []);
+        var identity = CreateVerifiedIdentity("auth0|demote-owner", "demote-owner@example.com");
+
+        await using var context = CreateContext(databaseName);
+        var handler = new ChangeMemberRoleCommandHandler(
+            context,
+            CreateCurrentUserService(context, identity),
+            identity,
+            new GroupAccessService(context));
+
+        var command = new ChangeMemberRoleCommand(group.Id, owner.Id, GroupMemberRole.Member);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Groups.CannotDemoteSelf", result.Error.Code);
+    }
+
+    [Fact]
     public async Task ChangeMemberRoleCommandHandler_Should_UpdateRole_When_ActorCanAssignRole()
     {
         // Arrange

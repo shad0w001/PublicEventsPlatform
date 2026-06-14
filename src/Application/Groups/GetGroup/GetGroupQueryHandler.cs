@@ -1,15 +1,20 @@
+using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
+using Application.Users.Services;
 using Domain.Groups;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
 
 namespace Application.Groups.GetGroup;
 
-internal sealed class GetGroupQueryHandler(IApplicationDbContext context)
-    : IQueryHandler<GetGroupQuery, PublicGroupResponse>
+internal sealed class GetGroupQueryHandler(
+    IApplicationDbContext context,
+    IUserIdentityAccessor identityAccessor,
+    ICurrentUserService currentUserService)
+    : IQueryHandler<GetGroupQuery, GroupPageResponse>
 {
-    public async Task<Result<PublicGroupResponse>> Handle(
+    public async Task<Result<GroupPageResponse>> Handle(
         GetGroupQuery query,
         CancellationToken cancellationToken)
     {
@@ -31,21 +36,37 @@ internal sealed class GetGroupQueryHandler(IApplicationDbContext context)
 
         if (group is null)
         {
-            return Result.Failure<PublicGroupResponse>(GroupErrors.NotFound(query.GroupId));
+            return Result.Failure<GroupPageResponse>(GroupErrors.NotFound(query.GroupId));
         }
 
         if (group.DeletedAt is not null)
         {
-            return Result.Failure<PublicGroupResponse>(GroupErrors.Deleted(query.GroupId));
+            return Result.Failure<GroupPageResponse>(GroupErrors.Deleted(query.GroupId));
         }
 
-        return new PublicGroupResponse(
+        GroupMemberRole? myRole = null;
+
+        if (identityAccessor.IsAuthenticated)
+        {
+            var userResult = await currentUserService.GetOrProvisionAsync(cancellationToken);
+            if (userResult.IsSuccess)
+            {
+                myRole = await context.GroupMemberships
+                    .AsNoTracking()
+                    .Where(m => m.GroupId == query.GroupId && m.UserId == userResult.Value.Id)
+                    .Select(m => (GroupMemberRole?)m.Role)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+        }
+
+        return new GroupPageResponse(
             group.Id,
             group.Name,
             group.Description,
             group.JoinPolicy,
             group.ProfileImageUrl,
             group.CreatedAt,
-            group.MemberCount);
+            group.MemberCount,
+            myRole);
     }
 }

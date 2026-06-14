@@ -7,16 +7,18 @@ using Domain.Groups;
 using Domain.Groups.Services;
 using SharedKernel;
 
-namespace Application.Groups.ChangeMemberRole;
+namespace Application.Groups.DecideGroupJoinApplication;
 
-internal sealed class ChangeMemberRoleCommandHandler(
+internal sealed class DecideGroupJoinApplicationCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUserService,
     IUserIdentityAccessor identityAccessor,
     GroupAccessService groupAccessService)
-    : ICommandHandler<ChangeMemberRoleCommand>
+    : ICommandHandler<DecideGroupJoinApplicationCommand>
 {
-    public async Task<Result> Handle(ChangeMemberRoleCommand command, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        DecideGroupJoinApplicationCommand command,
+        CancellationToken cancellationToken)
     {
         var gateResult = VerifiedUserGate.EnsureVerified(identityAccessor);
         if (gateResult.IsFailure)
@@ -38,37 +40,44 @@ internal sealed class ChangeMemberRoleCommandHandler(
 
         var group = groupResult.Value;
 
-        var actorMembershipResult = groupAccessService.GetMembership(group, userResult.Value.Id);
-        if (actorMembershipResult.IsFailure)
-        {
-            return Result.Failure(actorMembershipResult.Error);
-        }
-
-        var actorRole = actorMembershipResult.Value.Role;
-
-        if (!GroupPermissions.CanManageMembers(actorRole))
+        var membershipResult = groupAccessService.GetMembership(group, userResult.Value.Id);
+        if (membershipResult.IsFailure)
         {
             return Result.Failure(GroupErrors.InsufficientPermissions());
         }
 
-        if (!GroupPermissions.CanAssignRole(actorRole, command.Role))
+        if (!GroupPermissions.CanReviewApplications(membershipResult.Value.Role))
         {
             return Result.Failure(GroupErrors.InsufficientPermissions());
         }
 
-        if (command.UserId == userResult.Value.Id &&
-            GroupPermissions.GetRoleRank(command.Role) < GroupPermissions.GetRoleRank(actorRole))
-        {
-            return Result.Failure(GroupErrors.CannotDemoteSelf);
-        }
+        var utcNow = DateTime.UtcNow;
+        var decidedByUserId = userResult.Value.Id;
 
-        var changeResult = GroupService.ChangeMemberRole(group, command.UserId, command.Role);
-        if (changeResult.IsFailure)
+        Result decideResult = command.Decision switch
         {
-            return changeResult;
+            JoinApplicationDecision.Approve => ToResult(GroupService.ApproveApplication(
+                group,
+                command.ApplicationId,
+                decidedByUserId,
+                utcNow)),
+            JoinApplicationDecision.Reject => GroupService.RejectApplication(
+                group,
+                command.ApplicationId,
+                decidedByUserId,
+                utcNow),
+            _ => Result.Failure(GroupErrors.InsufficientPermissions())
+        };
+
+        if (decideResult.IsFailure)
+        {
+            return decideResult;
         }
 
         await context.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
+
+    private static Result ToResult(Result<GroupMembership> result) =>
+        result.IsFailure ? Result.Failure(result.Error) : Result.Success();
 }

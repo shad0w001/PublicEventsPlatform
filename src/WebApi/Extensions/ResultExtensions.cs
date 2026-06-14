@@ -16,6 +16,14 @@ public static class ResultExtensions
             onSuccess: value => new OkObjectResult(value),
             onFailure: failure => ToProblemResult(failure));
 
+    public static IActionResult ToCreatedResult<T>(
+        this Result<T> result,
+        string actionName,
+        object routeValues) =>
+        result.Match(
+            onSuccess: value => new CreatedAtActionResult(actionName, null, routeValues, value),
+            onFailure: failure => ToProblemResult(failure));
+
     public static IActionResult ToActionResult(this Result result) =>
         result.IsSuccess ? new NoContentResult() : ToProblemResult(result);
 

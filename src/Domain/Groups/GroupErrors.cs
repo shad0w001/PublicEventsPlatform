@@ -83,4 +83,8 @@ public static class GroupErrors
     public static readonly Error NoFieldsToUpdate = Error.Validation(
         "Groups.NoFieldsToUpdate",
         "At least one field must be provided to update the group");
+
+    public static readonly Error CannotDemoteSelf = Error.Forbidden(
+        "Groups.CannotDemoteSelf",
+        "You cannot demote your own role");
 }
