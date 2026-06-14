@@ -1,58 +1,59 @@
 using Domain.Users;
+using Domain.Users.Services;
 
 namespace DomainTests.Users;
 
-public class UserTests
+public class UserServiceTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
 
     [Fact]
-    public void CreateDefaultUsernameFromEmail_Should_ReturnLocalPart_When_EmailIsValid()
+    public void UserService_Should_ReturnLocalPart_When_CreateDefaultUsernameFromEmailWithValidEmail()
     {
         // Arrange — valid email with local part
         const string email = "new@example.com";
 
         // Act
-        var username = User.CreateDefaultUsernameFromEmail(email);
+        var username = UserService.CreateDefaultUsernameFromEmail(email);
 
         // Assert
         Assert.Equal("new", username);
     }
 
     [Fact]
-    public void CreateDefaultUsernameFromEmail_Should_ReturnUser_When_EmailHasNoLocalPart()
+    public void UserService_Should_ReturnUser_When_CreateDefaultUsernameFromEmailWithNoLocalPart()
     {
         // Arrange — email with empty local part
         const string email = "@example.com";
 
         // Act
-        var username = User.CreateDefaultUsernameFromEmail(email);
+        var username = UserService.CreateDefaultUsernameFromEmail(email);
 
         // Assert
         Assert.Equal("user", username);
     }
 
     [Fact]
-    public void CreateDefaultUsernameFromEmail_Should_ReturnUser_When_EmailHasNoAtSign()
+    public void UserService_Should_ReturnUser_When_CreateDefaultUsernameFromEmailWithNoAtSign()
     {
         // Arrange — email without @ separator
         const string email = "invalid";
 
         // Act
-        var username = User.CreateDefaultUsernameFromEmail(email);
+        var username = UserService.CreateDefaultUsernameFromEmail(email);
 
         // Assert
         Assert.Equal("user", username);
     }
 
     [Fact]
-    public void CreateFromExternalIdentity_Should_SetUsernameFromEmail_When_UserIsProvisioned()
+    public void UserService_Should_SetUsernameFromEmail_When_ProvisionFromExternalIdentity()
     {
         // Arrange — external identity with valid email
         const string email = "new@example.com";
 
         // Act
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             "auth0|subject",
             email,
             emailVerified: true,
@@ -65,13 +66,13 @@ public class UserTests
     }
 
     [Fact]
-    public void CreateFromExternalIdentity_Should_LeaveBioNull_When_UserIsProvisioned()
+    public void UserService_Should_LeaveBioNull_When_ProvisionFromExternalIdentity()
     {
         // Arrange — external identity inputs
         const string email = "new@example.com";
 
         // Act
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             "auth0|subject",
             email,
             emailVerified: true,
@@ -84,13 +85,13 @@ public class UserTests
     }
 
     [Fact]
-    public void CreateFromExternalIdentity_Should_UseAuth0Picture_When_PictureProvided()
+    public void UserService_Should_UseAuth0Picture_When_ProvisionFromExternalIdentityWithPicture()
     {
         // Arrange — Auth0 picture URL provided
         const string pictureUrl = "https://example.com/pic.jpg";
 
         // Act
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             "auth0|subject",
             "user@example.com",
             emailVerified: true,
@@ -103,12 +104,12 @@ public class UserTests
     }
 
     [Fact]
-    public void CreateFromExternalIdentity_Should_UseDefaultAvatar_When_PictureIsNull()
+    public void UserService_Should_UseDefaultAvatar_When_ProvisionFromExternalIdentityWithNullPicture()
     {
         // Arrange — no Auth0 picture
 
         // Act
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             "auth0|subject",
             "user@example.com",
             emailVerified: true,
@@ -121,10 +122,10 @@ public class UserTests
     }
 
     [Fact]
-    public void SyncFromExternalIdentity_Should_PreserveUsernameAndBio_When_IdentityClaimsChange()
+    public void UserService_Should_PreserveUsernameAndBio_When_SyncFromExternalIdentity()
     {
         // Arrange — existing user with app-only fields set
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             "auth0|subject",
             "old@example.com",
             emailVerified: false,
@@ -135,7 +136,8 @@ public class UserTests
         user.Bio = "Custom bio";
 
         // Act
-        user.SyncFromExternalIdentity(
+        UserService.SyncFromExternalIdentity(
+            user,
             "updated@example.com",
             emailVerified: true,
             profilePictureUrl: null,
@@ -147,10 +149,10 @@ public class UserTests
     }
 
     [Fact]
-    public void SyncFromExternalIdentity_Should_UpdatePicture_When_Auth0PictureProvided()
+    public void UserService_Should_UpdatePicture_When_SyncFromExternalIdentityWithAuth0Picture()
     {
         // Arrange — existing user with default avatar
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             "auth0|subject",
             "user@example.com",
             emailVerified: true,
@@ -160,7 +162,8 @@ public class UserTests
         const string newPictureUrl = "https://example.com/new-pic.jpg";
 
         // Act
-        user.SyncFromExternalIdentity(
+        UserService.SyncFromExternalIdentity(
+            user,
             "user@example.com",
             emailVerified: true,
             newPictureUrl,
@@ -171,11 +174,11 @@ public class UserTests
     }
 
     [Fact]
-    public void SyncFromExternalIdentity_Should_NotClearPicture_When_Auth0PictureIsNull()
+    public void UserService_Should_NotClearPicture_When_SyncFromExternalIdentityWithNullPicture()
     {
         // Arrange — existing user with stored picture
         const string existingPictureUrl = "https://example.com/pic.jpg";
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             "auth0|subject",
             "user@example.com",
             emailVerified: true,
@@ -184,7 +187,8 @@ public class UserTests
             ServiceRole.User);
 
         // Act
-        user.SyncFromExternalIdentity(
+        UserService.SyncFromExternalIdentity(
+            user,
             "user@example.com",
             emailVerified: true,
             profilePictureUrl: null,
@@ -195,10 +199,10 @@ public class UserTests
     }
 
     [Fact]
-    public void SyncFromExternalIdentity_Should_UpdateEmailAndServiceRole_When_ClaimsChange()
+    public void UserService_Should_UpdateEmailAndServiceRole_When_SyncFromExternalIdentity()
     {
         // Arrange — existing user
-        var user = User.CreateFromExternalIdentity(
+        var user = UserService.ProvisionFromExternalIdentity(
             "auth0|subject",
             "old@example.com",
             emailVerified: false,
@@ -207,7 +211,8 @@ public class UserTests
             ServiceRole.User);
 
         // Act
-        user.SyncFromExternalIdentity(
+        UserService.SyncFromExternalIdentity(
+            user,
             "updated@example.com",
             emailVerified: true,
             profilePictureUrl: null,

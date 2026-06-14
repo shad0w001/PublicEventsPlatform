@@ -1,35 +1,33 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Domain.Groups;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain.Groups;
 
-namespace Infrastructure.Database.Configurations.Groups
+namespace Infrastructure.Database.Configurations.Groups;
+
+public class GroupConfiguration : IEntityTypeConfiguration<Group>
 {
-    public class GroupConfiguration : IEntityTypeConfiguration<Group>
+    public void Configure(EntityTypeBuilder<Group> builder)
     {
-        public void Configure(EntityTypeBuilder<Group> builder)
-        {
-            builder.ToTable("groups");
+        builder.ToTable("groups");
 
-            //builder.HasKey(g => g.Id);
+        builder.Property(g => g.Name)
+            .IsRequired()
+            .HasMaxLength(GroupConstants.NameMaxLength);
 
-            builder.Property(g => g.Name)
-                .IsRequired()
-                .HasMaxLength(150);
+        builder.Property(g => g.Description)
+            .IsRequired()
+            .HasMaxLength(GroupConstants.DescriptionMaxLength)
+            .HasDefaultValue(string.Empty);
 
-            builder.Property(g => g.Description)
-                .HasMaxLength(1000);
+        builder.Property(g => g.ProfileImageUrl)
+            .IsRequired()
+            .HasMaxLength(500);
 
-            builder.Property(g => g.ProfileImageUrl)
-                .HasMaxLength(500);
+        builder.Property(g => g.JoinPolicy)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasDefaultValue(GroupJoinPolicy.Open);
 
-            builder.HasMany(g => g.GroupMemberships)
-                .WithOne(gm => gm.Group)
-                .HasForeignKey(gm => gm.GroupId);
-        }
+        builder.Property(g => g.DeletedAt);
     }
 }

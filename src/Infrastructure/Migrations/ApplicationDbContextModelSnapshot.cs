@@ -134,6 +134,45 @@ namespace Infrastructure.Migrations
                     b.ToTable("event_organizers", "public");
                 });
 
+            modelBuilder.Entity("Domain.Groups.GroupJoinApplication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("GroupId", "UserId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
+
+                    b.ToTable("group_join_applications", "public");
+                });
+
             modelBuilder.Entity("Domain.Groups.GroupMembership", b =>
                 {
                     b.Property<Guid>("GroupId")
@@ -263,17 +302,29 @@ namespace Infrastructure.Migrations
                 {
                     b.HasBaseType("Domain.Participants.Participant");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("character varying(1000)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("JoinPolicy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Open");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
 
                     b.Property<string>("ProfileImageUrl")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -445,6 +496,25 @@ namespace Infrastructure.Migrations
                     b.Navigation("Participant");
                 });
 
+            modelBuilder.Entity("Domain.Groups.GroupJoinApplication", b =>
+                {
+                    b.HasOne("Domain.Groups.Group", "Group")
+                        .WithMany("JoinApplications")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Groups.GroupMembership", b =>
                 {
                     b.HasOne("Domain.Groups.Group", "Group")
@@ -548,6 +618,8 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Groups.Group", b =>
                 {
                     b.Navigation("GroupMemberships");
+
+                    b.Navigation("JoinApplications");
                 });
 
             modelBuilder.Entity("Domain.Users.User", b =>

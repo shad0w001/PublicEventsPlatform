@@ -39,5 +39,8 @@ namespace SharedKernel
 
         public static Error Conflict(string code, string message) =>
             new(code, message, ErrorType.Conflict);
+
+        public static Error Forbidden(string code, string message) =>
+            new(code, message, ErrorType.Forbidden);
     }
 }

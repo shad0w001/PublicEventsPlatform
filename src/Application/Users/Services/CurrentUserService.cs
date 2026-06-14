@@ -1,0 +1,55 @@
+using Application.Abstractions.Authentication;
+using Application.Abstractions.Data;
+using Application.Users;
+using Domain.Users;
+using Domain.Users.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using SharedKernel;
+
+namespace Application.Users.Services;
+
+public sealed class CurrentUserService(
+    IApplicationDbContext context,
+    IUserIdentityAccessor identityAccessor,
+    IOptions<UserProfileOptions> userProfileOptions) : ICurrentUserService
+{
+    public async Task<Result<User>> GetOrProvisionAsync(CancellationToken cancellationToken = default)
+    {
+        if (!identityAccessor.IsAuthenticated)
+        {
+            return Result.Failure<User>(UserErrors.Unauthorized());
+        }
+
+        var user = await context.Users
+            .SingleOrDefaultAsync(
+                u => u.ExternalSubjectId == identityAccessor.ExternalSubjectId,
+                cancellationToken);
+
+        if (user is null)
+        {
+            user = UserService.ProvisionFromExternalIdentity(
+                identityAccessor.ExternalSubjectId,
+                identityAccessor.Email,
+                identityAccessor.EmailVerified,
+                identityAccessor.ProfilePictureUrl,
+                userProfileOptions.Value.DefaultAvatarUrl,
+                identityAccessor.ServiceRole);
+
+            context.Users.Add(user);
+        }
+        else
+        {
+            UserService.SyncFromExternalIdentity(
+                user,
+                identityAccessor.Email,
+                identityAccessor.EmailVerified,
+                identityAccessor.ProfilePictureUrl,
+                identityAccessor.ServiceRole);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        return user;
+    }
+}

@@ -1,7 +1,9 @@
 using Application.Abstractions.Authentication;
 using Application.Users;
 using Application.Users.GetMe;
+using Application.Users.Services;
 using Domain.Users;
+using Domain.Users.Services;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -58,7 +60,7 @@ public class GetCurrentUserQueryHandlerTests
 
         await using (var seedContext = CreateContext(databaseName))
         {
-            var existingUser = User.CreateFromExternalIdentity(
+            var existingUser = UserService.ProvisionFromExternalIdentity(
                 externalSubjectId,
                 "old@example.com",
                 emailVerified: false,
@@ -168,7 +170,7 @@ public class GetCurrentUserQueryHandlerTests
 
         await using (var seedContext = CreateContext(databaseName))
         {
-            var existingUser = User.CreateFromExternalIdentity(
+            var existingUser = UserService.ProvisionFromExternalIdentity(
                 externalSubjectId,
                 "user@example.com",
                 emailVerified: true,
@@ -206,11 +208,15 @@ public class GetCurrentUserQueryHandlerTests
 
     private static GetCurrentUserQueryHandler CreateHandler(
         ApplicationDbContext context,
-        IUserIdentityAccessor identity) =>
-        new(
+        IUserIdentityAccessor identity)
+    {
+        var currentUserService = new CurrentUserService(
             context,
             identity,
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+
+        return new GetCurrentUserQueryHandler(currentUserService, identity);
+    }
 
     private static ApplicationDbContext CreateContext(string databaseName)
     {

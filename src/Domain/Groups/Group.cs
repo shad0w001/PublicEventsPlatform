@@ -1,18 +1,17 @@
 ﻿using Domain.Participants;
-using SharedKernel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Domain.Groups
+namespace Domain.Groups;
+
+public class Group : Participant
 {
-    public class Group : Participant
-    {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string? ProfileImageUrl { get; set; }
-        public List<GroupMembership> GroupMemberships { get; set; } = new List<GroupMembership>();
-    }
+    public string Name { get; internal set; } = string.Empty;
+    public string Description { get; internal set; } = string.Empty;
+    public string ProfileImageUrl { get; internal set; } = string.Empty;
+    public GroupJoinPolicy JoinPolicy { get; internal set; } = GroupJoinPolicy.Open;
+    public DateTime? DeletedAt { get; internal set; }
+
+    public bool IsDeleted => DeletedAt is not null;
+
+    public List<GroupMembership> GroupMemberships { get; internal set; } = [];
+    public List<GroupJoinApplication> JoinApplications { get; internal set; } = [];
 }

@@ -9,6 +9,7 @@ namespace Domain.Groups
     public enum GroupMemberRole
     {
         Member,
+        Organizer,
         Moderator,
         Administrator,
         Owner

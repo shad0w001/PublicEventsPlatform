@@ -1,17 +1,13 @@
 using Application.Abstractions.Authentication;
-using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Domain.Users;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using SharedKernel;
 
 namespace Application.Users.GetMe;
 
-public sealed class GetCurrentUserQueryHandler(
-    IApplicationDbContext context,
-    IUserIdentityAccessor identityAccessor,
-    IOptions<UserProfileOptions> userProfileOptions) : IQueryHandler<GetCurrentUserQuery, UserResponse>
+internal sealed class GetCurrentUserQueryHandler(
+    ICurrentUserService currentUserService,
+    IUserIdentityAccessor identityAccessor) : IQueryHandler<GetCurrentUserQuery, UserResponse>
 {
     public async Task<Result<UserResponse>> Handle(
         GetCurrentUserQuery query,
@@ -22,35 +18,13 @@ public sealed class GetCurrentUserQueryHandler(
             return Result.Failure<UserResponse>(UserErrors.Unauthorized());
         }
 
-        var user = await context.Users
-            .SingleOrDefaultAsync(
-                u => u.ExternalSubjectId == identityAccessor.ExternalSubjectId,
-                cancellationToken);
-
-        if (user is null)
+        var userResult = await currentUserService.GetOrProvisionAsync(cancellationToken);
+        if (userResult.IsFailure)
         {
-            user = User.CreateFromExternalIdentity(
-                identityAccessor.ExternalSubjectId,
-                identityAccessor.Email,
-                identityAccessor.EmailVerified,
-                identityAccessor.ProfilePictureUrl,
-                userProfileOptions.Value.DefaultAvatarUrl,
-                identityAccessor.ServiceRole);
-
-            context.Users.Add(user);
-        }
-        else
-        {
-            user.SyncFromExternalIdentity(
-                identityAccessor.Email,
-                identityAccessor.EmailVerified,
-                identityAccessor.ProfilePictureUrl,
-                identityAccessor.ServiceRole);
+            return Result.Failure<UserResponse>(userResult.Error);
         }
 
-        await context.SaveChangesAsync(cancellationToken);
-
-        return MapToResponse(user);
+        return MapToResponse(userResult.Value);
     }
 
     private static UserResponse MapToResponse(User user) =>

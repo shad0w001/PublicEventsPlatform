@@ -23,4 +23,8 @@ public static class UserErrors
     public static Error Unauthorized() => Error.Failure(
         "Users.Unauthorized",
         "You are not authorized to perform this action");
+
+    public static Error EmailNotVerified() => Error.Forbidden(
+        "Users.EmailNotVerified",
+        "Email verification is required to perform this action");
 }

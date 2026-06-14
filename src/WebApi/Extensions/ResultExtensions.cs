@@ -16,6 +16,17 @@ public static class ResultExtensions
             onSuccess: value => new OkObjectResult(value),
             onFailure: failure => ToProblemResult(failure));
 
+    public static IActionResult ToCreatedResult<T>(
+        this Result<T> result,
+        string actionName,
+        object routeValues) =>
+        result.Match(
+            onSuccess: value => new CreatedAtActionResult(actionName, null, routeValues, value),
+            onFailure: failure => ToProblemResult(failure));
+
+    public static IActionResult ToActionResult(this Result result) =>
+        result.IsSuccess ? new NoContentResult() : ToProblemResult(result);
+
     private static ObjectResult ToProblemResult(Result result)
     {
         var problemDetails = new ProblemDetails
@@ -39,6 +50,7 @@ public static class ResultExtensions
             ErrorType.Validation or ErrorType.Problem => StatusCodes.Status400BadRequest,
             ErrorType.NotFound => StatusCodes.Status404NotFound,
             ErrorType.Conflict => StatusCodes.Status409Conflict,
+            ErrorType.Forbidden => StatusCodes.Status403Forbidden,
             _ => StatusCodes.Status500InternalServerError
         };
 
@@ -51,6 +63,8 @@ public static class ResultExtensions
                 "https://tools.ietf.org/html/rfc7231#section-6.5.4",
             ErrorType.Conflict =>
                 "https://tools.ietf.org/html/rfc7231#section-6.5.8",
+            ErrorType.Forbidden =>
+                "https://tools.ietf.org/html/rfc7231#section-6.5.3",
             ErrorType.Faulure =>
                 "https://tools.ietf.org/html/rfc7235#section-3.1",
             _ => "https://tools.ietf.org/html/rfc7231#section-6.6.1"
