@@ -57,12 +57,24 @@ public static class EventService
 
         if (patch.Title is not null)
         {
-            @event.Title = patch.Title;
+            var titleResult = ValidateTitle(patch.Title, required: true);
+            if (titleResult.IsFailure)
+            {
+                return titleResult;
+            }
+
+            @event.Title = patch.Title.Trim();
         }
 
         if (patch.Description is not null)
         {
-            @event.Description = patch.Description;
+            var descriptionResult = ValidateDescription(patch.Description, required: false);
+            if (descriptionResult.IsFailure)
+            {
+                return descriptionResult;
+            }
+
+            @event.Description = patch.Description.Trim();
         }
 
         if (patch.BannerImageUrl is not null)
@@ -85,8 +97,22 @@ public static class EventService
             @event.EndTime = patch.EndTime.Value;
         }
 
+        if (patch.StartTime is not null || patch.EndTime is not null)
+        {
+            var timeRangeResult = ValidateEffectiveTimeRange(@event.StartTime, @event.EndTime);
+            if (timeRangeResult.IsFailure)
+            {
+                return timeRangeResult;
+            }
+        }
+
         if (patch.TimeZoneId is not null)
         {
+            if (!IsValidTimeZoneId(patch.TimeZoneId))
+            {
+                return Result.Failure(EventErrors.InvalidTimeZoneId);
+            }
+
             @event.TimeZoneId = patch.TimeZoneId;
         }
 
@@ -111,6 +137,23 @@ public static class EventService
             {
                 @event.Locations.Add(CloneLocation(location));
             }
+
+            if (@event.Tier == EventTier.Small &&
+                @event.Locations.Count > EventConstants.SmallTierMaxLocations)
+            {
+                return Result.Failure(EventErrors.TooManyLocationsForSmallTier);
+            }
+
+            foreach (var location in @event.Locations)
+            {
+                var segmentResult = ValidateLocationSegment(location);
+                if (segmentResult.IsFailure)
+                {
+                    return segmentResult;
+                }
+            }
+
+            @event.LocationType = DeriveLocationType(@event.Locations);
         }
 
         @event.Raise(new EventUpdated(@event.Id));
@@ -370,6 +413,21 @@ public static class EventService
 
     private static bool IsDraftTime(DateTime time) =>
         time == EventConstants.DraftEpochUtc;
+
+    private static Result ValidateEffectiveTimeRange(DateTime startTime, DateTime endTime)
+    {
+        if (IsDraftTime(startTime) || IsDraftTime(endTime))
+        {
+            return Result.Success();
+        }
+
+        if (startTime >= endTime)
+        {
+            return Result.Failure(EventErrors.InvalidTimeRange);
+        }
+
+        return Result.Success();
+    }
 
     private static bool IsValidTimeZoneId(string? timeZoneId)
     {

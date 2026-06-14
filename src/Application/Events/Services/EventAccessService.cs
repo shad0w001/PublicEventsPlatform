@@ -124,4 +124,19 @@ internal sealed class EventAccessService(IApplicationDbContext context)
 
         return new EventEditAccess(hostParticipantId, hostIsGroup, groupRole);
     }
+
+    public async Task<int> CountRecentPublishesByHostAsync(
+        Guid hostParticipantId,
+        CancellationToken cancellationToken)
+    {
+        var windowStart = DateTime.UtcNow.AddDays(-7);
+
+        return await context.Events
+            .AsNoTracking()
+            .Where(e => e.DeletedAt == null
+                        && e.PublishedAt != null
+                        && e.PublishedAt >= windowStart
+                        && e.Organizers.Any(o => o.ParticipantId == hostParticipantId))
+            .CountAsync(cancellationToken);
+    }
 }

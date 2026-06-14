@@ -52,6 +52,10 @@ public static class EventErrors
         "Events.CategoryRequired",
         "Event category is required to publish");
 
+    public static Error CategoryNotFound(Guid categoryId) => Error.NotFound(
+        "Events.CategoryNotFound",
+        $"The event category with the Id = '{categoryId}' was not found");
+
     public static readonly Error AdmissionTypeRequired = Error.Validation(
         "Events.AdmissionTypeRequired",
         "Admission type (free or paid) is required to publish");
