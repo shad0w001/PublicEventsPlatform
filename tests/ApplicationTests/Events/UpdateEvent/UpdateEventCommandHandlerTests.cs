@@ -269,6 +269,42 @@ public class UpdateEventCommandHandlerTests
     }
 
     [Fact]
+    public async Task UpdateEventCommandHandler_Should_ReturnInsufficientPermissions_When_FormerGroupOrganizerPatches()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var owner = CreateUser("auth0|former-patch-owner", "fpatch-owner@example.com");
+        var formerOrganizer = CreateUser("auth0|former-patch-org", "fpatch-org@example.com");
+        var group = SeedGroupWithMember(databaseName, owner, formerOrganizer, GroupMemberRole.Organizer);
+
+        var formerOrganizerIdentity = CreateVerifiedIdentity("auth0|former-patch-org", "fpatch-org@example.com");
+        var eventId = await SeedDraftEventForHostAsync(
+            databaseName,
+            formerOrganizerIdentity,
+            group.Id,
+            "Former Organizer Draft");
+
+        await using (var seedContext = CreateContext(databaseName))
+        {
+            seedContext.GroupMemberships.RemoveRange(
+                seedContext.GroupMemberships.Where(m => m.UserId == formerOrganizer.Id && m.GroupId == group.Id));
+            await seedContext.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, formerOrganizerIdentity);
+
+        var command = new UpdateEventCommand(eventId, Description: "Former member attempt");
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.InsufficientPermissions", result.Error.Code);
+    }
+
+    [Fact]
     public async Task UpdateEventCommandHandler_Should_ReturnNoFieldsToUpdate_When_CommandIsEmpty()
     {
         // Arrange

@@ -30,7 +30,7 @@ public class EventPermissionsTests
     }
 
     [Fact]
-    public void EventPermissions_Should_AllowEdit_When_UserIsCreatedByUserId()
+    public void EventPermissions_Should_DenyEdit_When_UserIsCreatedByUserIdButLeftGroup()
     {
         // Arrange
         var @event = new Event { CreatedByUserId = CreatorUserId };
@@ -43,6 +43,25 @@ public class EventPermissionsTests
             hostParticipantId: GroupHostParticipantId,
             hostIsGroup: true,
             groupRole: GroupMemberRole.Member);
+
+        // Assert
+        Assert.False(canEdit);
+    }
+
+    [Fact]
+    public void EventPermissions_Should_AllowEdit_When_UserIsCreatedByUserId_And_UserHosted()
+    {
+        // Arrange
+        var @event = new Event { CreatedByUserId = CreatorUserId };
+
+        // Act
+        var canEdit = EventPermissions.CanEdit(
+            @event,
+            actorUserId: CreatorUserId,
+            actorParticipantId: OtherUserId,
+            hostParticipantId: HostUserParticipantId,
+            hostIsGroup: false,
+            groupRole: null);
 
         // Assert
         Assert.True(canEdit);

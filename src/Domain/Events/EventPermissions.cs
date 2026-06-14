@@ -4,7 +4,8 @@ namespace Domain.Events;
 
 /// <summary>
 /// Capability-based event authorization. User-hosted events grant the host participant
-/// and CreatedByUserId (set on first PATCH). Group-hosted events grant Organizer+ and CreatedByUserId.
+/// and CreatedByUserId (set on first PATCH). Group-hosted events grant active Organizer+ only;
+/// CreatedByUserId is audit metadata and does not retain edit access after leaving the org.
 /// </summary>
 public static class EventPermissions
 {
@@ -25,15 +26,15 @@ public static class EventPermissions
         bool hostIsGroup,
         GroupMemberRole? groupRole)
     {
-        if (@event.CreatedByUserId == actorUserId)
-        {
-            return true;
-        }
-
         if (hostIsGroup)
         {
             return groupRole is not null &&
                    GroupPermissions.CanCreateEventsAsGroup(groupRole.Value);
+        }
+
+        if (@event.CreatedByUserId == actorUserId)
+        {
+            return true;
         }
 
         return actorParticipantId == hostParticipantId;

@@ -64,8 +64,8 @@ public sealed class EventsController(
     [SwaggerOperation(
         Summary = "List my manageable events",
         Description = """
-            Returns non-deleted events the verified caller can edit: self-hosted, group-hosted (Organizer+),
-            or events where the caller is CreatedByUserId. Includes Draft, Published, and Cancelled.
+            Returns non-deleted events the verified caller can edit: self-hosted or group-hosted with current Organizer+ membership.
+            Includes Draft, Published, and Cancelled.
             Sorted by status (Draft, Published, Cancelled), then StartTime ascending, then CreatedAt descending.
             Attending/RSVP events are not included (Phase 5). Returns 200 with an empty list when none match.
             """)]
@@ -85,6 +85,7 @@ public sealed class EventsController(
             Anonymous access allowed for published and cancelled events (PublicEventResponse).
             Draft events return 404 unless the caller is an editor (EditDetail only).
             Eligible editors receive EditDetail only (EventDetailResponse), never both public and detail.
+            CanEdit is false when the event is cancelled (read-only editor view; mutations return 409).
             Deleted events return 404. Draft startTime/endTime may be Unix epoch until wizard screen 4 is saved.
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "Event view", typeof(GetEventResponse))]
@@ -101,7 +102,7 @@ public sealed class EventsController(
         Summary = "Update an event (partial)",
         Description = """
             Partial update for the creation wizard (screens 2–5) and post-publish edits.
-            Requires verified email and edit permission (host, creator, or group Organizer+).
+            Requires verified email and edit permission (user host, user-hosted CreatedByUserId, or current group Organizer+).
             Omitted fields are unchanged; locations[] replaces the full list when sent.
             CreatedByUserId is set on the first PATCH. Draft non-editors receive 403.
             Returns 200 with full event detail.

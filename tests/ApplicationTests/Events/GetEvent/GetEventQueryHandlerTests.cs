@@ -172,6 +172,65 @@ public class GetEventQueryHandlerTests
     }
 
     [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnEditDetailWithCanEditFalse_When_EditorGetsCancelledEvent()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|cancel-editor", "cancel-editor@example.com");
+        var eventId = await SeedPublishedEventAsync(databaseName, identity, cancelled: true);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value.Public);
+        Assert.NotNull(result.Value.EditDetail);
+        Assert.False(result.Value.CanEdit);
+        Assert.Equal(EventStatus.Cancelled, result.Value.EditDetail!.Status);
+        Assert.Equal(eventId, result.Value.EditDetail.Id);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnPublicOnly_When_FormerGroupOrganizerGetsPublishedEvent()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var owner = CreateUser("auth0|former-get-owner", "fget-owner@example.com");
+        var formerOrganizer = CreateUser("auth0|former-get-org", "fget-org@example.com");
+        var group = SeedGroupWithMember(databaseName, owner, formerOrganizer, GroupMemberRole.Organizer);
+
+        var formerOrganizerIdentity = CreateVerifiedIdentity("auth0|former-get-org", "fget-org@example.com");
+        var eventId = await SeedPublishedEventForHostAsync(
+            databaseName,
+            formerOrganizerIdentity,
+            group.Id,
+            "Former Org Event");
+
+        await using (var seedContext = CreateContext(databaseName))
+        {
+            seedContext.GroupMemberships.RemoveRange(
+                seedContext.GroupMemberships.Where(m => m.UserId == formerOrganizer.Id && m.GroupId == group.Id));
+            await seedContext.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, formerOrganizerIdentity);
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Null(result.Value.EditDetail);
+        Assert.False(result.Value.CanEdit);
+        Assert.Equal("Host Org", result.Value.Public!.HostDisplayName);
+    }
+
+    [Fact]
     public async Task GetEventQueryHandler_Should_ReturnNotFound_When_EventIsSoftDeleted()
     {
         // Arrange

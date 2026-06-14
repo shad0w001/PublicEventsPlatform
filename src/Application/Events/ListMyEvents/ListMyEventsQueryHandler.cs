@@ -5,7 +5,6 @@ using Application.Events.Services;
 using Application.Users.Services;
 using Domain.Events;
 using Domain.Groups;
-using Domain.Users.Services;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
 
@@ -49,12 +48,19 @@ internal sealed class ListMyEventsQueryHandler(
             .AsNoTracking()
             .Include(e => e.Organizers)
             .Where(e => e.DeletedAt == null &&
-                        (e.CreatedByUserId == userId ||
-                         e.Organizers.Any(o => o.ParticipantId == userId) ||
+                        (e.Organizers.Any(o => o.ParticipantId == userId) ||
                          e.Organizers.Any(o => organizerGroupIds.Contains(o.ParticipantId))))
             .ToListAsync(cancellationToken);
 
-        var hostDisplayNames = await ResolveHostDisplayNamesAsync(events, cancellationToken);
+        var hostParticipantIds = events
+            .Select(e => eventAccessService.GetHostParticipantId(e))
+            .Distinct()
+            .ToList();
+
+        var hostDisplayNames = await EventHostDisplayNameLookup.ResolveBatchAsync(
+            context,
+            hostParticipantIds,
+            cancellationToken);
 
         var items = events
             .Select(e =>
@@ -91,52 +97,4 @@ internal sealed class ListMyEventsQueryHandler(
             EventStatus.Cancelled => 2,
             _ => 3
         };
-
-    private async Task<HostDisplayNameLookup> ResolveHostDisplayNamesAsync(
-        IReadOnlyList<Event> events,
-        CancellationToken cancellationToken)
-    {
-        if (events.Count == 0)
-        {
-            return new HostDisplayNameLookup([], []);
-        }
-
-        var hostParticipantIds = events
-            .Select(e => eventAccessService.GetHostParticipantId(e))
-            .Distinct()
-            .ToList();
-
-        var groups = await context.Groups
-            .AsNoTracking()
-            .Where(g => hostParticipantIds.Contains(g.Id))
-            .Select(g => new { g.Id, g.Name })
-            .ToListAsync(cancellationToken);
-
-        var groupHostIds = groups.Select(g => g.Id).ToHashSet();
-        var names = groups.ToDictionary(g => g.Id, g => g.Name);
-
-        var userHostIds = hostParticipantIds.Where(id => !groupHostIds.Contains(id)).ToList();
-
-        if (userHostIds.Count > 0)
-        {
-            var users = await context.Users
-                .AsNoTracking()
-                .Where(u => userHostIds.Contains(u.Id))
-                .Select(u => new { u.Id, u.Username, u.Email })
-                .ToListAsync(cancellationToken);
-
-            foreach (var user in users)
-            {
-                names[user.Id] = !string.IsNullOrWhiteSpace(user.Username)
-                    ? user.Username
-                    : UserService.CreateDefaultUsernameFromEmail(user.Email);
-            }
-        }
-
-        return new HostDisplayNameLookup(groupHostIds, names);
-    }
-
-    private sealed record HostDisplayNameLookup(
-        HashSet<Guid> GroupHostIds,
-        Dictionary<Guid, string> Names);
 }

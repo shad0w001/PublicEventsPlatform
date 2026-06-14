@@ -118,7 +118,7 @@ public class ListMyEventsQueryHandlerTests
     }
 
     [Fact]
-    public async Task ListMyEventsQueryHandler_Should_IncludeEvent_When_CreatedByUserIdMatchesWithoutMembership()
+    public async Task ListMyEventsQueryHandler_Should_ExcludeEvent_When_FormerOrganizerLeftGroup()
     {
         // Arrange
         var databaseName = Guid.NewGuid().ToString();
@@ -127,7 +127,7 @@ public class ListMyEventsQueryHandlerTests
         var group = SeedGroupWithMember(databaseName, owner, formerOrganizer, GroupMemberRole.Organizer);
 
         var formerOrganizerIdentity = CreateVerifiedIdentity("auth0|former-org", "former@example.com");
-        var eventId = await SeedPublishedEventForHostAsync(
+        await SeedPublishedEventForHostAsync(
             databaseName,
             formerOrganizerIdentity,
             group.Id,
@@ -148,8 +148,7 @@ public class ListMyEventsQueryHandlerTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Single(result.Value);
-        Assert.Equal(eventId, result.Value[0].Id);
+        Assert.Empty(result.Value);
     }
 
     [Fact]

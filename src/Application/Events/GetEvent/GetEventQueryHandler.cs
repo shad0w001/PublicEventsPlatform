@@ -4,7 +4,6 @@ using Application.Abstractions.Messaging;
 using Application.Events.Services;
 using Application.Users.Services;
 using Domain.Events;
-using Domain.Users.Services;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
 
@@ -111,7 +110,7 @@ internal sealed class GetEventQueryHandler(
                             @event,
                             editAccessResult.Value,
                             editorCategoryName),
-                        CanEdit: true);
+                        CanEdit: @event.Status != EventStatus.Cancelled);
                 }
             }
         }
@@ -122,7 +121,8 @@ internal sealed class GetEventQueryHandler(
             .AsNoTracking()
             .AnyAsync(g => g.Id == hostParticipantId, cancellationToken);
 
-        var hostDisplayName = await ResolveHostDisplayNameAsync(
+        var hostDisplayName = await EventHostDisplayNameLookup.ResolveAsync(
+            context,
             hostParticipantId,
             hostIsGroup,
             cancellationToken);
@@ -139,40 +139,5 @@ internal sealed class GetEventQueryHandler(
             categoryName);
 
         return new GetEventResponse(publicResponse, EditDetail: null, CanEdit: false);
-    }
-
-    private async Task<string> ResolveHostDisplayNameAsync(
-        Guid hostParticipantId,
-        bool hostIsGroup,
-        CancellationToken cancellationToken)
-    {
-        if (hostIsGroup)
-        {
-            var groupName = await context.Groups
-                .AsNoTracking()
-                .Where(g => g.Id == hostParticipantId)
-                .Select(g => g.Name)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            return groupName ?? "Organization";
-        }
-
-        var user = await context.Users
-            .AsNoTracking()
-            .Where(u => u.Id == hostParticipantId)
-            .Select(u => new { u.Username, u.Email })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (user is null)
-        {
-            return "Host";
-        }
-
-        if (!string.IsNullOrWhiteSpace(user.Username))
-        {
-            return user.Username;
-        }
-
-        return UserService.CreateDefaultUsernameFromEmail(user.Email);
     }
 }

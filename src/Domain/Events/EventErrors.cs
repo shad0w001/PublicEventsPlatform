@@ -16,10 +16,6 @@ public static class EventErrors
         "Events.InsufficientPermissions",
         "You are not authorized to perform this action on this event");
 
-    public static readonly Error Forbidden = Error.Forbidden(
-        "Events.Forbidden",
-        "You are not authorized to perform this action on this event");
-
     public static readonly Error InvalidTitle = Error.Validation(
         "Events.InvalidTitle",
         "Event title is required");
