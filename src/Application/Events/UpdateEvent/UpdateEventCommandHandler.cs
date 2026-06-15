@@ -14,7 +14,8 @@ internal sealed class UpdateEventCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUserService,
     IUserIdentityAccessor identityAccessor,
-    EventAccessService eventAccessService)
+    EventAccessService eventAccessService,
+    EventVenueConflictService venueConflictService)
     : ICommandHandler<UpdateEventCommand, EventDetailResponse>
 {
     public async Task<Result<EventDetailResponse>> Handle(
@@ -94,6 +95,15 @@ internal sealed class UpdateEventCommandHandler(
             return Result.Failure<EventDetailResponse>(updateResult.Error);
         }
 
+        if (ShouldCheckVenueConflict(@event, command))
+        {
+            var venueResult = await venueConflictService.EnsureNoConflictAsync(@event, cancellationToken);
+            if (venueResult.IsFailure)
+            {
+                return Result.Failure<EventDetailResponse>(venueResult.Error);
+            }
+        }
+
         await context.SaveChangesAsync(cancellationToken);
 
         var categoryName = await EventCategoryLookup.ResolveNameAsync(
@@ -103,6 +113,12 @@ internal sealed class UpdateEventCommandHandler(
 
         return EventMapping.ToDetailResponse(@event, editAccess, categoryName);
     }
+
+    private static bool ShouldCheckVenueConflict(Event @event, UpdateEventCommand command) =>
+        @event.Status == EventStatus.Published &&
+        (command.Locations is not null ||
+         command.StartTime is not null ||
+         command.EndTime is not null);
 
     private static bool HasAnyField(UpdateEventCommand command) =>
         command.Title is not null ||

@@ -15,6 +15,7 @@ internal sealed class PublishEventCommandHandler(
     ICurrentUserService currentUserService,
     IUserIdentityAccessor identityAccessor,
     EventAccessService eventAccessService,
+    EventVenueConflictService venueConflictService,
     IOptions<EventOptions> eventOptions)
     : ICommandHandler<PublishEventCommand, EventDetailResponse>
 {
@@ -75,6 +76,12 @@ internal sealed class PublishEventCommandHandler(
         if (publishResult.IsFailure)
         {
             return Result.Failure<EventDetailResponse>(publishResult.Error);
+        }
+
+        var venueResult = await venueConflictService.EnsureNoConflictAsync(@event, cancellationToken);
+        if (venueResult.IsFailure)
+        {
+            return Result.Failure<EventDetailResponse>(venueResult.Error);
         }
 
         await context.SaveChangesAsync(cancellationToken);

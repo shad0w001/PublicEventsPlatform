@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<GroupAccessService>();
         services.AddScoped<EventAccessService>();
+        services.AddScoped<EventVenueConflictService>();
 
         services.Scan(scan => scan
             .FromAssembliesOf(typeof(DependencyInjection))

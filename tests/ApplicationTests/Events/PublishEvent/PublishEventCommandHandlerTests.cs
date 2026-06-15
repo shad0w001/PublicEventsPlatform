@@ -66,6 +66,44 @@ public class PublishEventCommandHandlerTests
     }
 
     [Fact]
+    public async Task PublishEventCommandHandler_Should_Publish_When_SegmentTimesNull()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-null-segments", "nullseg@example.com");
+        var eventId = await SeedPublishReadyDraftAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value.Locations);
+        Assert.Null(result.Value.Locations[0].StartsAt);
+        Assert.Null(result.Value.Locations[0].EndsAt);
+    }
+
+    [Fact]
+    public async Task PublishEventCommandHandler_Should_ReturnInvalidSegmentTimeRange_When_SegmentTimesInvalidAtPublish()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-bad-segment", "badseg@example.com");
+        var eventId = await SeedPublishReadyDraftWithInvalidSegmentAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.InvalidSegmentTimeRange", result.Error.Code);
+    }
+
+    [Fact]
     public async Task PublishEventCommandHandler_Should_ReturnValidationError_When_DraftIsIncomplete()
     {
         // Arrange
@@ -81,6 +119,79 @@ public class PublishEventCommandHandlerTests
         // Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Events.InvalidDescription", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task PublishEventCommandHandler_Should_ReturnVenueConflict_When_PublishedEventSharesPhysicalVenue()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-venue-conflict", "venueconflict@example.com");
+        await SeedPublishedEventAsync(databaseName, identity);
+        var eventId = await SeedPublishReadyDraftAsync(databaseName, identity, title: "Overlapping Venue");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.VenueConflict", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task PublishEventCommandHandler_Should_Publish_When_CancelledEventOccupiedSameVenue()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-cancelled-venue", "cancelledvenue@example.com");
+        await SeedRecentPublishedEventsAsync(databaseName, identity, count: 1, cancelled: true);
+        var eventId = await SeedPublishReadyDraftAsync(databaseName, identity, title: "After Cancelled");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task PublishEventCommandHandler_Should_Publish_When_ExistingDraftSharesSameVenue()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-draft-venue", "draftvenue@example.com");
+        await SeedPublishReadyDraftAsync(databaseName, identity, title: "Draft Occupant");
+        var eventId = await SeedPublishReadyDraftAsync(databaseName, identity, title: "Publishing Draft");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task PublishEventCommandHandler_Should_Publish_When_OnlyVirtualOccupantOverlaps()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-virtual-occupant", "virtualocc@example.com");
+        await SeedPublishedVirtualOnlyEventAsync(databaseName, identity);
+        var eventId = await SeedPublishReadyDraftAsync(databaseName, identity, title: "Physical New Event");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]
@@ -294,6 +405,32 @@ public class PublishEventCommandHandlerTests
         return @event.Id;
     }
 
+    private static async Task<Guid> SeedPublishReadyDraftWithInvalidSegmentAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, "Bad Segment Publish", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var categoryId = SeedCategoryInContext(context);
+        MakePublishReadyViaUpdate(@event, categoryId, user.Id);
+        @event.Locations[0].StartsAt = @event.EndTime;
+        @event.Locations[0].EndsAt = @event.StartTime;
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
     private static async Task<Guid> SeedPublishReadyDraftForHostAsync(
         string databaseName,
         FakeUserIdentityAccessor identity,
@@ -341,7 +478,11 @@ public class PublishEventCommandHandlerTests
             var @event = createResult.Value.Event;
             var organizer = createResult.Value.Organizer;
 
-            MakePublishReadyViaUpdate(@event, categoryId, user.Id);
+            MakePublishReadyViaUpdate(
+                @event,
+                categoryId,
+                user.Id,
+                address: $"{100 + i} Main St");
             EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 100);
 
             if (cancelled)
@@ -376,6 +517,56 @@ public class PublishEventCommandHandlerTests
         context.EventOrganizers.Add(organizer);
         await context.SaveChangesAsync(CancellationToken.None);
         return @event.Id;
+    }
+
+    private static async Task SeedPublishedVirtualOnlyEventAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, "Virtual Only", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var categoryId = SeedCategoryInContext(context);
+        var start = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
+        var patch = new EventUpdatePatch
+        {
+            Description = "A test event description",
+            CategoryId = categoryId,
+            StartTime = start,
+            EndTime = end,
+            TimeZoneId = "Europe/Sofia",
+            AdmissionType = AdmissionType.Free,
+            Locations =
+            [
+                new EventLocation
+                {
+                    Name = "Stream",
+                    Kind = EventLocationKind.Virtual,
+                    Url = "https://stream.example.com/live"
+                }
+            ]
+        };
+
+        var updateResult = EventService.Update(@event, patch, user.Id);
+        if (updateResult.IsFailure)
+        {
+            throw new InvalidOperationException(updateResult.Error.Code);
+        }
+
+        EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: MaxPublishesPerWeek);
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
     }
 
     private static async Task<Guid> SeedPublishedEventAsync(
@@ -420,7 +611,9 @@ public class PublishEventCommandHandlerTests
         Event @event,
         Guid categoryId,
         Guid actingUserId,
-        AdmissionType admissionType = AdmissionType.Free)
+        AdmissionType admissionType = AdmissionType.Free,
+        string address = "123 Main St",
+        string city = "Sofia")
     {
         var start = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
         var end = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
@@ -438,8 +631,8 @@ public class PublishEventCommandHandlerTests
                 {
                     Name = "Main Hall",
                     Kind = EventLocationKind.Physical,
-                    Address = "123 Main St",
-                    City = "Sofia"
+                    Address = address,
+                    City = city
                 }
             ]
         };
@@ -512,6 +705,7 @@ public class PublishEventCommandHandlerTests
             currentUserService,
             identity,
             new EventAccessService(context),
+            new EventVenueConflictService(context),
             Options.Create(new EventOptions { MaxPublishesPerHostPerWeek = MaxPublishesPerWeek }));
     }
 

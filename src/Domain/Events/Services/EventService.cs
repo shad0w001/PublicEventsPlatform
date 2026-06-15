@@ -320,7 +320,13 @@ public static class EventService
 
     internal static (DateTime Start, DateTime End) GetEffectiveSegmentWindow(
         EventLocation location,
-        Event @event)
+        Event @event) =>
+        GetEffectiveSegmentWindow(location, @event.StartTime, @event.EndTime);
+
+    internal static (DateTime Start, DateTime End) GetEffectiveSegmentWindow(
+        EventLocation location,
+        DateTime eventStart,
+        DateTime eventEnd)
     {
         var startsAt = NormalizeSegmentTime(location.StartsAt);
         var endsAt = NormalizeSegmentTime(location.EndsAt);
@@ -330,7 +336,7 @@ public static class EventService
             return (startsAt.Value, endsAt.Value);
         }
 
-        return (@event.StartTime, @event.EndTime);
+        return (eventStart, eventEnd);
     }
 
     private static Result ValidateAllLocationSegments(Event @event)

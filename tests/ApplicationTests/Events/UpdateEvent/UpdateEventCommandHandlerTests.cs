@@ -103,6 +103,220 @@ public class UpdateEventCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.Locations.Count);
         Assert.Equal(EventLocationType.Hybrid, result.Value.LocationType);
+
+        var physical = result.Value.Locations.Single(l => l.Name == "Hall A");
+        Assert.Equal(segmentStart, physical.StartsAt);
+        Assert.Equal(segmentEnd, physical.EndsAt);
+
+        var stream = result.Value.Locations.Single(l => l.Name == "Live Stream");
+        Assert.Null(stream.StartsAt);
+        Assert.Null(stream.EndsAt);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_ReturnSegmentTimeOutOfBounds_When_SegmentOutsideEventWindow()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|segment-oob", "oob@example.com");
+        var eventId = await SeedDraftEventAsync(databaseName, identity, "Bounds Event");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var eventStart = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var eventEnd = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
+
+        await handler.Handle(
+            new UpdateEventCommand(eventId, StartTime: eventStart, EndTime: eventEnd, TimeZoneId: "Europe/Sofia"),
+            CancellationToken.None);
+
+        var command = new UpdateEventCommand(
+            eventId,
+            Locations:
+            [
+                new EventLocationResponse(
+                    "Hall",
+                    eventStart.AddHours(-1),
+                    eventEnd,
+                    EventLocationKind.Physical,
+                    null,
+                    "1 Main St",
+                    null,
+                    null,
+                    "Sofia",
+                    null,
+                    null)
+            ]);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.SegmentTimeOutOfBounds", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_ReturnSegmentTimesIncomplete_When_OnlyStartsAtSet()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|segment-incomplete", "incomplete@example.com");
+        var eventId = await SeedDraftEventAsync(databaseName, identity, "Incomplete Segment");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var eventStart = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var command = new UpdateEventCommand(
+            eventId,
+            Locations:
+            [
+                new EventLocationResponse(
+                    "Hall",
+                    eventStart,
+                    null,
+                    EventLocationKind.Physical,
+                    null,
+                    "1 Main St",
+                    null,
+                    null,
+                    "Sofia",
+                    null,
+                    null)
+            ]);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.SegmentTimesIncomplete", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_ReturnInvalidSegmentTimeRange_When_StartsAtNotBeforeEndsAt()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|segment-range", "range@example.com");
+        var eventId = await SeedDraftEventAsync(databaseName, identity, "Bad Segment Range");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var eventStart = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var eventEnd = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
+
+        await handler.Handle(
+            new UpdateEventCommand(eventId, StartTime: eventStart, EndTime: eventEnd, TimeZoneId: "Europe/Sofia"),
+            CancellationToken.None);
+
+        var command = new UpdateEventCommand(
+            eventId,
+            Locations:
+            [
+                new EventLocationResponse(
+                    "Hall",
+                    eventEnd,
+                    eventStart,
+                    EventLocationKind.Physical,
+                    null,
+                    "1 Main St",
+                    null,
+                    null,
+                    "Sofia",
+                    null,
+                    null)
+            ]);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.InvalidSegmentTimeRange", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_RejectEventTimePatch_When_ExistingSegmentsFallOutsideNewBounds()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|segment-shrink", "shrink@example.com");
+        var eventId = await SeedDraftEventAsync(databaseName, identity, "Shrink Event");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var eventStart = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var eventEnd = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
+
+        await handler.Handle(
+            new UpdateEventCommand(
+                eventId,
+                StartTime: eventStart,
+                EndTime: eventEnd,
+                TimeZoneId: "Europe/Sofia",
+                Locations:
+                [
+                    new EventLocationResponse(
+                        "Hall",
+                        eventStart,
+                        eventEnd,
+                        EventLocationKind.Physical,
+                        null,
+                        "1 Main St",
+                        null,
+                        null,
+                        "Sofia",
+                        null,
+                        null)
+                ]),
+            CancellationToken.None);
+
+        var command = new UpdateEventCommand(eventId, EndTime: eventStart.AddHours(1));
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.SegmentTimeOutOfBounds", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_AcceptPhysicalSegment_When_OnlyCoordinatesProvided()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|segment-coords", "coords@example.com");
+        var eventId = await SeedDraftEventAsync(databaseName, identity, "Coords Event");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var command = new UpdateEventCommand(
+            eventId,
+            Locations:
+            [
+                new EventLocationResponse(
+                    "Map Pin",
+                    null,
+                    null,
+                    EventLocationKind.Physical,
+                    null,
+                    null,
+                    42.6977,
+                    23.3219,
+                    null,
+                    null,
+                    null)
+            ]);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(42.6977, result.Value.Locations[0].Latitude);
+        Assert.Equal(23.3219, result.Value.Locations[0].Longitude);
     }
 
     [Fact]
@@ -207,6 +421,192 @@ public class UpdateEventCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(EventStatus.Published, result.Value.Status);
         Assert.Equal("Updated Published Title", result.Value.Title);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_ReturnVenueConflict_When_PublishedLocationPatchSharesVenue()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|update-venue-conflict", "upvenue@example.com");
+        var start = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
+        await SeedPublishedEventWithVenueAsync(
+            databaseName,
+            identity,
+            "Occupant",
+            "123 Main St",
+            "Sofia",
+            start,
+            end);
+        var eventId = await SeedPublishedEventWithVenueAsync(
+            databaseName,
+            identity,
+            "Moving Event",
+            "456 Other St",
+            "Plovdiv",
+            start,
+            end);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var command = new UpdateEventCommand(
+            eventId,
+            Locations:
+            [
+                new EventLocationResponse(
+                    "Main Hall",
+                    null,
+                    null,
+                    EventLocationKind.Physical,
+                    null,
+                    "123 Main St",
+                    null,
+                    null,
+                    "Sofia",
+                    null,
+                    null)
+            ]);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.VenueConflict", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_UpdateDraftLocations_When_PublishedOccupantExists()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|update-draft-venue", "draftvenue@example.com");
+        var start = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
+        await SeedPublishedEventWithVenueAsync(
+            databaseName,
+            identity,
+            "Occupant",
+            "123 Main St",
+            "Sofia",
+            start,
+            end);
+        var eventId = await SeedDraftEventAsync(databaseName, identity, "Draft Event");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var command = new UpdateEventCommand(
+            eventId,
+            StartTime: start,
+            EndTime: end,
+            TimeZoneId: "Europe/Sofia",
+            Locations:
+            [
+                new EventLocationResponse(
+                    "Main Hall",
+                    null,
+                    null,
+                    EventLocationKind.Physical,
+                    null,
+                    "123 Main St",
+                    null,
+                    null,
+                    "Sofia",
+                    null,
+                    null)
+            ]);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_ReturnVenueConflict_When_PublishedTimePatchCreatesOverlap()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|update-time-venue", "timvenue@example.com");
+        var occupantStart = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var occupantEnd = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
+        await SeedPublishedEventWithVenueAsync(
+            databaseName,
+            identity,
+            "Occupant",
+            "123 Main St",
+            "Sofia",
+            occupantStart,
+            occupantEnd);
+        var eventId = await SeedPublishedEventWithVenueAsync(
+            databaseName,
+            identity,
+            "Later Event",
+            "123 Main St",
+            "Sofia",
+            new DateTime(2026, 7, 2, 18, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 7, 2, 22, 0, 0, DateTimeKind.Utc));
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var command = new UpdateEventCommand(
+            eventId,
+            StartTime: occupantStart,
+            EndTime: occupantEnd);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Events.VenueConflict", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_UpdatePublishedLocations_When_SameVenueOnSelf()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|update-self-venue", "selfvenue@example.com");
+        var start = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
+        var eventId = await SeedPublishedEventWithVenueAsync(
+            databaseName,
+            identity,
+            "Self Event",
+            "123 Main St",
+            "Sofia",
+            start,
+            end);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var command = new UpdateEventCommand(
+            eventId,
+            Locations:
+            [
+                new EventLocationResponse(
+                    "Renamed Hall",
+                    null,
+                    null,
+                    EventLocationKind.Physical,
+                    null,
+                    "123 Main St",
+                    null,
+                    null,
+                    "Sofia",
+                    null,
+                    null)
+            ]);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Renamed Hall", result.Value.Locations[0].Name);
     }
 
     [Fact]
@@ -405,6 +805,61 @@ public class UpdateEventCommandHandlerTests
         return @event.Id;
     }
 
+    private static async Task<Guid> SeedPublishedEventWithVenueAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity,
+        string title,
+        string address,
+        string city,
+        DateTime start,
+        DateTime end)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, title, user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var categoryId = SeedCategoryInContext(context);
+        var patch = new EventUpdatePatch
+        {
+            Description = "A test event description",
+            CategoryId = categoryId,
+            StartTime = start,
+            EndTime = end,
+            TimeZoneId = "Europe/Sofia",
+            AdmissionType = AdmissionType.Free,
+            Locations =
+            [
+                new EventLocation
+                {
+                    Name = "Main Hall",
+                    Kind = EventLocationKind.Physical,
+                    Address = address,
+                    City = city
+                }
+            ]
+        };
+
+        var updateResult = EventService.Update(@event, patch, user.Id);
+        if (updateResult.IsFailure)
+        {
+            throw new InvalidOperationException(updateResult.Error.Code);
+        }
+
+        EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 6);
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
     private static async Task<Guid> SeedPublishedEventAsync(
         string databaseName,
         FakeUserIdentityAccessor identity,
@@ -548,7 +1003,8 @@ public class UpdateEventCommandHandlerTests
             context,
             currentUserService,
             identity,
-            new EventAccessService(context));
+            new EventAccessService(context),
+            new EventVenueConflictService(context));
     }
 
     private static ApplicationDbContext CreateContext(string databaseName)

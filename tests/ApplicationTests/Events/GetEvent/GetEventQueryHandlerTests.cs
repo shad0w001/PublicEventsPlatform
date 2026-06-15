@@ -277,6 +277,134 @@ public class GetEventQueryHandlerTests
         Assert.True(result.Value.Public.HostIsGroup);
     }
 
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnSegmentTimesOnPublic_When_PublishedEventHasBoundedSegments()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|public-segments", "pubseg@example.com");
+        var segmentStart = new DateTime(2026, 7, 1, 19, 0, 0, DateTimeKind.Utc);
+        var segmentEnd = new DateTime(2026, 7, 1, 21, 0, 0, DateTimeKind.Utc);
+        var eventId = await SeedPublishedEventAsync(
+            databaseName,
+            identity,
+            segmentStartsAt: segmentStart,
+            segmentEndsAt: segmentEnd);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Single(result.Value.Public!.Locations);
+        Assert.Equal(segmentStart, result.Value.Public.Locations[0].StartsAt);
+        Assert.Equal(segmentEnd, result.Value.Public.Locations[0].EndsAt);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnSegmentTimesOnEditDetail_When_EditorGetsDraft()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|draft-segments", "draftseg@example.com");
+        var segmentStart = new DateTime(2026, 8, 1, 18, 0, 0, DateTimeKind.Utc);
+        var segmentEnd = new DateTime(2026, 8, 1, 20, 0, 0, DateTimeKind.Utc);
+        var eventId = await SeedDraftEventWithLocationsAsync(
+            databaseName,
+            identity,
+            segmentStart,
+            segmentEnd);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.EditDetail);
+        Assert.Single(result.Value.EditDetail!.Locations);
+        Assert.Equal(segmentStart, result.Value.EditDetail.Locations[0].StartsAt);
+        Assert.Equal(segmentEnd, result.Value.EditDetail.Locations[0].EndsAt);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnNullSegmentTimes_When_LocationUsesEventWindow()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|null-segments", "nullseg@example.com");
+        var eventId = await SeedPublishedEventAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Single(result.Value.Public!.Locations);
+        Assert.Null(result.Value.Public.Locations[0].StartsAt);
+        Assert.Null(result.Value.Public.Locations[0].EndsAt);
+    }
+
+    private static async Task<Guid> SeedDraftEventWithLocationsAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity,
+        DateTime segmentStartsAt,
+        DateTime segmentEndsAt)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, "Draft With Segments", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var categoryId = SeedCategoryInContext(context);
+        var eventStart = new DateTime(2026, 8, 1, 17, 0, 0, DateTimeKind.Utc);
+        var eventEnd = new DateTime(2026, 8, 1, 22, 0, 0, DateTimeKind.Utc);
+        var patch = new EventUpdatePatch
+        {
+            Description = "Draft description",
+            CategoryId = categoryId,
+            StartTime = eventStart,
+            EndTime = eventEnd,
+            TimeZoneId = "Europe/Sofia",
+            Locations =
+            [
+                new EventLocation
+                {
+                    Name = "Hall",
+                    StartsAt = segmentStartsAt,
+                    EndsAt = segmentEndsAt,
+                    Kind = EventLocationKind.Physical,
+                    Address = "1 Main St",
+                    City = "Sofia"
+                }
+            ]
+        };
+
+        var updateResult = EventService.Update(@event, patch, user.Id);
+        if (updateResult.IsFailure)
+        {
+            throw new InvalidOperationException(updateResult.Error.Code);
+        }
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
     private static async Task<Guid> SeedDraftEventAsync(
         string databaseName,
         FakeUserIdentityAccessor identity)
@@ -303,7 +431,9 @@ public class GetEventQueryHandlerTests
         FakeUserIdentityAccessor identity,
         string? username = null,
         bool cancelled = false,
-        bool softDeleted = false)
+        bool softDeleted = false,
+        DateTime? segmentStartsAt = null,
+        DateTime? segmentEndsAt = null)
     {
         await using var context = CreateContext(databaseName);
         var currentUserService = new CurrentUserService(
@@ -322,7 +452,7 @@ public class GetEventQueryHandlerTests
         var organizer = createResult.Value.Organizer;
 
         var categoryId = SeedCategoryInContext(context);
-        MakePublishReadyViaUpdate(@event, categoryId, user.Id);
+        MakePublishReadyViaUpdate(@event, categoryId, user.Id, segmentStartsAt, segmentEndsAt);
 
         if (softDeleted)
         {
@@ -388,7 +518,9 @@ public class GetEventQueryHandlerTests
     private static void MakePublishReadyViaUpdate(
         Event @event,
         Guid categoryId,
-        Guid actingUserId)
+        Guid actingUserId,
+        DateTime? segmentStartsAt = null,
+        DateTime? segmentEndsAt = null)
     {
         var start = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
         var end = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
@@ -405,6 +537,8 @@ public class GetEventQueryHandlerTests
                 new EventLocation
                 {
                     Name = "Main Hall",
+                    StartsAt = segmentStartsAt,
+                    EndsAt = segmentEndsAt,
                     Kind = EventLocationKind.Physical,
                     Address = "123 Main St",
                     City = "Sofia"

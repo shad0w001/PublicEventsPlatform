@@ -123,4 +123,8 @@ public static class EventErrors
     public static readonly Error InsufficientHostPermissions = Error.Forbidden(
         "Events.InsufficientHostPermissions",
         "You are not authorized to create events for this host");
+
+    public static readonly Error VenueConflict = Error.Conflict(
+        "Events.VenueConflict",
+        "Another published event already uses this physical venue at an overlapping time");
 }
