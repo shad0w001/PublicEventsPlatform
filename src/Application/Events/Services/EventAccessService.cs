@@ -86,6 +86,58 @@ internal sealed class EventAccessService(IApplicationDbContext context)
         return @event;
     }
 
+    public async Task<Result<Event>> GetActiveEventWithPluginsAsync(
+        Guid eventId,
+        bool includePluginData,
+        CancellationToken cancellationToken)
+    {
+        IQueryable<Event> query = context.Events
+            .Include(e => e.Organizers)
+            .Include(e => e.Locations);
+
+        query = includePluginData
+            ? query.Include(e => e.Plugins).ThenInclude(u => u.Data)
+            : query.Include(e => e.Plugins);
+
+        var @event = await query.FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+
+        if (@event is null)
+        {
+            return Result.Failure<Event>(EventErrors.NotFound(eventId));
+        }
+
+        if (@event.IsDeleted)
+        {
+            return Result.Failure<Event>(EventErrors.Deleted(eventId));
+        }
+
+        return @event;
+    }
+
+    public async Task<Result<Event>> GetActiveEventForDisplayAsync(
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var @event = await context.Events
+            .Include(e => e.Organizers)
+            .Include(e => e.Locations)
+            .Include(e => e.Plugins).ThenInclude(u => u.Data)
+            .Include(e => e.Plugins).ThenInclude(u => u.Plugin)
+            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+
+        if (@event is null)
+        {
+            return Result.Failure<Event>(EventErrors.NotFound(eventId));
+        }
+
+        if (@event.IsDeleted)
+        {
+            return Result.Failure<Event>(EventErrors.Deleted(eventId));
+        }
+
+        return @event;
+    }
+
     public Guid GetHostParticipantId(Event @event) =>
         @event.Organizers.Single().ParticipantId;
 

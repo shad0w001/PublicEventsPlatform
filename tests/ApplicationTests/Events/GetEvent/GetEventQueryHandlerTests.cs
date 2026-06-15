@@ -8,11 +8,14 @@ using Domain.Events.EventLocations;
 using Domain.Events.Services;
 using Domain.Groups;
 using Domain.Groups.Services;
+using Domain.Plugins;
+using Domain.Plugins.Services;
 using Domain.Users;
 using Domain.Users.Services;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace ApplicationTests.Events.GetEvent;
 
@@ -350,6 +353,210 @@ public class GetEventQueryHandlerTests
         Assert.Single(result.Value.Public!.Locations);
         Assert.Null(result.Value.Public.Locations[0].StartsAt);
         Assert.Null(result.Value.Public.Locations[0].EndsAt);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnPluginsSortedNewestFirst_When_AnonymousGetsPublishedBigEvent()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|pub-plugins", "plugins@example.com");
+        var eventId = await SeedBigPublishedEventWithPluginsAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Equal(2, result.Value.Public!.Plugins.Count);
+        Assert.Equal(PluginConstants.CodeLinks, result.Value.Public.Plugins[0].Code);
+        Assert.Equal(PluginConstants.CodeFaq, result.Value.Public.Plugins[1].Code);
+        Assert.True(result.Value.Public.Plugins[0].AttachedAt >= result.Value.Public.Plugins[1].AttachedAt);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnPluginsOnEditDetail_When_EditorGetsDraftWithPlugin()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|draft-plugin", "draftplugin@example.com");
+        var eventId = await SeedBigDraftEventWithFaqPluginAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.EditDetail);
+        Assert.Single(result.Value.EditDetail!.Plugins);
+        Assert.Equal(PluginConstants.CodeFaq, result.Value.EditDetail.Plugins[0].Code);
+        Assert.Contains(PluginConstants.DataKeyEntries, result.Value.EditDetail.Plugins[0].Data.Keys);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnPluginsWithCanEditFalse_When_CancelledPublishedEvent()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|cancel-plugin", "cancelplugin@example.com");
+        var eventId = await SeedBigPublishedEventWithPluginsAsync(databaseName, identity, cancelled: true);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Equal(2, result.Value.Public!.Plugins.Count);
+        Assert.False(result.Value.CanEdit);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnEmptyPlugins_When_PublishedEventHasNoPlugins()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|no-plugins", "noplugins@example.com");
+        var eventId = await SeedPublishedEventAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Empty(result.Value.Public!.Plugins);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnEmptyPlugins_When_SmallTierPublishedEvent()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|small-plugins", "small@example.com");
+        var eventId = await SeedPublishedEventAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Equal(EventTier.Small, result.Value.Public!.Tier);
+        Assert.Empty(result.Value.Public.Plugins);
+    }
+
+    private static async Task<Guid> SeedBigDraftEventWithFaqPluginAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Big, "Big Draft With Plugin", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var faqPlugin = new Plugin
+        {
+            Code = PluginConstants.CodeFaq,
+            Name = "FAQ",
+            Description = "FAQ plugin",
+            Version = "1.0.0"
+        };
+        context.Plugins.Add(faqPlugin);
+        PluginService.Attach(@event, faqPlugin, ValidFaqData());
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
+    private static async Task<Guid> SeedBigPublishedEventWithPluginsAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity,
+        bool cancelled = false)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Big, "Big Published With Plugins", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var categoryId = SeedCategoryInContext(context);
+        MakePublishReadyViaUpdate(@event, categoryId, user.Id);
+
+        var faqPlugin = new Plugin
+        {
+            Code = PluginConstants.CodeFaq,
+            Name = "FAQ",
+            Description = "FAQ plugin",
+            Version = "1.0.0"
+        };
+        var linksPlugin = new Plugin
+        {
+            Code = PluginConstants.CodeLinks,
+            Name = "Important Links",
+            Description = "Links plugin",
+            Version = "1.0.0"
+        };
+        context.Plugins.AddRange(faqPlugin, linksPlugin);
+
+        PluginService.Attach(@event, faqPlugin, ValidFaqData());
+        await Task.Delay(5);
+        PluginService.Attach(@event, linksPlugin, ValidLinksData());
+
+        EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 100);
+        if (cancelled)
+        {
+            EventService.Cancel(@event);
+        }
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
+    private static Dictionary<string, string?> ValidFaqData()
+    {
+        var entries = JsonSerializer.Serialize(new[]
+        {
+            new { question = "What time?", answer = "At 6 PM." }
+        });
+
+        return new Dictionary<string, string?> { [PluginConstants.DataKeyEntries] = entries };
+    }
+
+    private static Dictionary<string, string?> ValidLinksData()
+    {
+        var links = JsonSerializer.Serialize(new[]
+        {
+            new { label = "Website", url = "https://example.com" }
+        });
+
+        return new Dictionary<string, string?> { [PluginConstants.DataKeyLinks] = links };
     }
 
     private static async Task<Guid> SeedDraftEventWithLocationsAsync(

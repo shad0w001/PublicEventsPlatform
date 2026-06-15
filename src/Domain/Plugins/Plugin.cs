@@ -1,19 +1,13 @@
 ﻿using SharedKernel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Domain.Plugins
+namespace Domain.Plugins;
+
+public class Plugin : Entity
 {
-    public class Plugin : Entity
-    {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string Version { get; set; }
-        public string Author { get; set; }
+    public string Code { get; internal set; } = string.Empty;
+    public string Name { get; internal set; } = string.Empty;
+    public string Description { get; internal set; } = string.Empty;
+    public string Version { get; internal set; } = string.Empty;
 
-        public List<PluginUsage> Usages { get; set; } = new();
-    }
+    public List<PluginUsage> Usages { get; internal set; } = [];
 }

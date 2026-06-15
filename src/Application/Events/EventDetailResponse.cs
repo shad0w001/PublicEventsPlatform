@@ -1,3 +1,4 @@
+using Application.Plugins;
 using Domain.Events;
 
 namespace Application.Events;
@@ -21,4 +22,5 @@ public sealed record EventDetailResponse(
     Guid? CreatedByUserId,
     DateTime CreatedAt,
     DateTime? PublishedAt,
-    IReadOnlyList<EventLocationResponse> Locations);
+    IReadOnlyList<EventLocationResponse> Locations,
+    IReadOnlyList<EventPluginResponse> Plugins);

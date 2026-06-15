@@ -1,3 +1,4 @@
+using Application.Plugins;
 using Domain.Events;
 
 namespace Application.Events;
@@ -18,4 +19,5 @@ public sealed record PublicEventResponse(
     DateTime? PublishedAt,
     string HostDisplayName,
     bool HostIsGroup,
-    IReadOnlyList<EventLocationResponse> Locations);
+    IReadOnlyList<EventLocationResponse> Locations,
+    IReadOnlyList<EventPluginResponse> Plugins);

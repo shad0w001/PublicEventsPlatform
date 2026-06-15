@@ -5,6 +5,7 @@ using Application.Events.Services;
 using Application.Users.Services;
 using Domain.Events;
 using Domain.Events.Services;
+using Domain.Plugins.Services;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
 
@@ -41,7 +42,13 @@ internal sealed class UpdateEventCommandHandler(
 
         var user = userResult.Value;
 
-        var eventResult = await eventAccessService.GetActiveEventAsync(command.EventId, cancellationToken);
+        var eventResult = command.Tier is not null
+            ? await eventAccessService.GetActiveEventWithPluginsAsync(
+                command.EventId,
+                includePluginData: false,
+                cancellationToken)
+            : await eventAccessService.GetActiveEventAsync(command.EventId, cancellationToken);
+
         if (eventResult.IsFailure)
         {
             return Result.Failure<EventDetailResponse>(eventResult.Error);
@@ -102,6 +109,11 @@ internal sealed class UpdateEventCommandHandler(
             {
                 return Result.Failure<EventDetailResponse>(venueResult.Error);
             }
+        }
+
+        if (command.Tier == EventTier.Small && @event.Plugins.Count > 0)
+        {
+            PluginService.DetachAll(@event);
         }
 
         await context.SaveChangesAsync(cancellationToken);

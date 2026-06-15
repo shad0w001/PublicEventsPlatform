@@ -10,6 +10,8 @@ using Domain.Events.EventLocations;
 using Domain.Events.Services;
 using Domain.Groups;
 using Domain.Groups.Services;
+using Domain.Plugins;
+using Domain.Plugins.Services;
 using Domain.Users;
 using Domain.Users.Services;
 using Infrastructure.Database;
@@ -726,6 +728,31 @@ public class UpdateEventCommandHandlerTests
     }
 
     [Fact]
+    public async Task UpdateEventCommandHandler_Should_ClearAttachedPlugins_When_DraftTierDowngradedToSmall()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|tier-downgrade", "tier@example.com");
+        var eventId = await SeedBigDraftEventWithPluginAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+        var command = new UpdateEventCommand(eventId, Tier: EventTier.Small);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EventTier.Small, result.Value.Tier);
+
+        await using var verifyContext = CreateContext(databaseName);
+        var persisted = await verifyContext.Events
+            .Include(e => e.Plugins)
+            .SingleAsync(e => e.Id == eventId);
+        Assert.Empty(persisted.Plugins);
+    }
+
+    [Fact]
     public async Task UpdateEventCommandHandler_Should_ReturnEmailNotVerified_When_EmailIsUnverified()
     {
         // Arrange
@@ -752,6 +779,43 @@ public class UpdateEventCommandHandlerTests
         // Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Users.EmailNotVerified", result.Error.Code);
+    }
+
+    private static async Task<Guid> SeedBigDraftEventWithPluginAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Big, "Big With Plugin", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var plugin = new Plugin
+        {
+            Code = PluginConstants.CodeFaq,
+            Name = "FAQ",
+            Description = "FAQ plugin",
+            Version = "1.0.0"
+        };
+        context.Plugins.Add(plugin);
+
+        var entries = System.Text.Json.JsonSerializer.Serialize(new[]
+        {
+            new { question = "Q?", answer = "A." }
+        });
+        var data = new Dictionary<string, string?> { [PluginConstants.DataKeyEntries] = entries };
+        PluginService.Attach(@event, plugin, data);
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
     }
 
     private static async Task<Guid> SeedDraftEventAsync(

@@ -1,3 +1,4 @@
+using Application.Plugins;
 using Application.Events.Services;
 using Domain.Events;
 using Domain.Events.EventLocations;
@@ -9,7 +10,8 @@ internal static class EventMapping
     public static EventDetailResponse ToDetailResponse(
         Event @event,
         EventEditAccess editAccess,
-        string? categoryName) =>
+        string? categoryName,
+        IReadOnlyList<EventPluginResponse>? plugins = null) =>
         new(
             @event.Id,
             @event.Tier,
@@ -29,13 +31,15 @@ internal static class EventMapping
             @event.CreatedByUserId,
             @event.CreatedAt,
             @event.PublishedAt,
-            @event.Locations.Select(ToLocationResponse).ToList());
+            @event.Locations.Select(ToLocationResponse).ToList(),
+            plugins ?? []);
 
     public static PublicEventResponse ToPublicResponse(
         Event @event,
         string hostDisplayName,
         bool hostIsGroup,
-        string? categoryName) =>
+        string? categoryName,
+        IReadOnlyList<EventPluginResponse>? plugins = null) =>
         new(
             @event.Tier,
             @event.Title,
@@ -52,7 +56,8 @@ internal static class EventMapping
             @event.PublishedAt,
             hostDisplayName,
             hostIsGroup,
-            @event.Locations.Select(ToLocationResponse).ToList());
+            @event.Locations.Select(ToLocationResponse).ToList(),
+            plugins ?? []);
 
     public static EventLocation ToDomainLocation(EventLocationResponse location) =>
         new()

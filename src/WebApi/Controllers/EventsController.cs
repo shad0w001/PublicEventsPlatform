@@ -89,6 +89,8 @@ public sealed class EventsController(
             Deleted events return 404. Draft startTime/endTime may be Unix epoch until wizard screen 3 (times) is saved.
             locations[].startsAt and endsAt are nullable (UTC). Null segment times mean the full event window
             (startTime–endTime) for display; clients derive locally—no server-side effective* fields.
+            Public and EditDetail include plugins[] (EventPluginResponse: pluginId, code, name, data, attachedAt),
+            sorted newest attach first; empty array when none; present on cancelled events (read-only when CanEdit is false).
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "Event view", typeof(GetEventResponse))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Event not found, deleted, or draft hidden", typeof(ProblemDetails))]

@@ -2,6 +2,7 @@ using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Application.Events.Services;
+using Application.Plugins;
 using Application.Users.Services;
 using Domain.Events;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,9 @@ internal sealed class GetEventQueryHandler(
         GetEventQuery query,
         CancellationToken cancellationToken)
     {
-        var eventResult = await eventAccessService.GetActiveEventAsync(query.EventId, cancellationToken);
+        var eventResult = await eventAccessService.GetActiveEventForDisplayAsync(
+            query.EventId,
+            cancellationToken);
         if (eventResult.IsFailure)
         {
             return Result.Failure<GetEventResponse>(eventResult.Error);
@@ -75,9 +78,15 @@ internal sealed class GetEventQueryHandler(
             @event.CategoryId,
             cancellationToken);
 
+        var plugins = PluginMapping.ToEventPluginResponses(@event.Plugins);
+
         return new GetEventResponse(
             Public: null,
-            EditDetail: EventMapping.ToDetailResponse(@event, editAccessResult.Value, categoryName),
+            EditDetail: EventMapping.ToDetailResponse(
+                @event,
+                editAccessResult.Value,
+                categoryName,
+                plugins),
             CanEdit: true);
     }
 
@@ -104,12 +113,15 @@ internal sealed class GetEventQueryHandler(
                         @event.CategoryId,
                         cancellationToken);
 
+                    var editorPlugins = PluginMapping.ToEventPluginResponses(@event.Plugins);
+
                     return new GetEventResponse(
                         Public: null,
                         EditDetail: EventMapping.ToDetailResponse(
                             @event,
                             editAccessResult.Value,
-                            editorCategoryName),
+                            editorCategoryName,
+                            editorPlugins),
                         CanEdit: @event.Status != EventStatus.Cancelled);
                 }
             }
@@ -132,11 +144,14 @@ internal sealed class GetEventQueryHandler(
             @event.CategoryId,
             cancellationToken);
 
+        var plugins = PluginMapping.ToEventPluginResponses(@event.Plugins);
+
         var publicResponse = EventMapping.ToPublicResponse(
             @event,
             hostDisplayName,
             hostIsGroup,
-            categoryName);
+            categoryName,
+            plugins);
 
         return new GetEventResponse(publicResponse, EditDetail: null, CanEdit: false);
     }

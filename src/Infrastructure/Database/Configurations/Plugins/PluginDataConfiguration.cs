@@ -1,19 +1,22 @@
 ﻿using Domain.Plugins;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Infrastructure.Database.Configurations.Plugins
+namespace Infrastructure.Database.Configurations.Plugins;
+
+public class PluginDataConfiguration : IEntityTypeConfiguration<PluginData>
 {
-    public class PluginDataConfiguration : IEntityTypeConfiguration<PluginData>
+    public void Configure(EntityTypeBuilder<PluginData> builder)
     {
-        public void Configure(EntityTypeBuilder<PluginData> builder)
-        {
-            builder.ToTable("plugin_data");
-        }
+        builder.ToTable("plugin_data");
+
+        builder.HasKey(d => d.Id);
+
+        builder.Property(d => d.Key)
+            .IsRequired()
+            .HasMaxLength(PluginConstants.DataKeyMaxLength);
+
+        builder.HasIndex(d => new { d.PluginUsageId, d.Key })
+            .IsUnique();
     }
 }
