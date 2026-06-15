@@ -104,6 +104,12 @@ public static class EventService
             {
                 return timeRangeResult;
             }
+
+            var segmentsResult = ValidateAllLocationSegments(@event);
+            if (segmentsResult.IsFailure)
+            {
+                return segmentsResult;
+            }
         }
 
         if (patch.TimeZoneId is not null)
@@ -146,7 +152,7 @@ public static class EventService
 
             foreach (var location in @event.Locations)
             {
-                var segmentResult = ValidateLocationSegment(location);
+                var segmentResult = ValidateLocationSegment(location, @event.StartTime, @event.EndTime);
                 if (segmentResult.IsFailure)
                 {
                     return segmentResult;
@@ -302,7 +308,36 @@ public static class EventService
 
         foreach (var location in @event.Locations)
         {
-            var segmentResult = ValidateLocationSegment(location);
+            var segmentResult = ValidateLocationSegment(location, @event.StartTime, @event.EndTime);
+            if (segmentResult.IsFailure)
+            {
+                return segmentResult;
+            }
+        }
+
+        return Result.Success();
+    }
+
+    internal static (DateTime Start, DateTime End) GetEffectiveSegmentWindow(
+        EventLocation location,
+        Event @event)
+    {
+        var startsAt = NormalizeSegmentTime(location.StartsAt);
+        var endsAt = NormalizeSegmentTime(location.EndsAt);
+
+        if (startsAt is not null && endsAt is not null)
+        {
+            return (startsAt.Value, endsAt.Value);
+        }
+
+        return (@event.StartTime, @event.EndTime);
+    }
+
+    private static Result ValidateAllLocationSegments(Event @event)
+    {
+        foreach (var location in @event.Locations)
+        {
+            var segmentResult = ValidateLocationSegment(location, @event.StartTime, @event.EndTime);
             if (segmentResult.IsFailure)
             {
                 return segmentResult;
@@ -393,23 +428,73 @@ public static class EventService
         return Result.Success();
     }
 
-    private static Result ValidateLocationSegment(EventLocation location)
+    private static Result ValidateLocationSegment(
+        EventLocation location,
+        DateTime eventStart,
+        DateTime eventEnd)
     {
         if (string.IsNullOrWhiteSpace(location.Name))
         {
             return Result.Failure(EventErrors.InvalidLocationSegment);
         }
 
-        return location.Kind switch
+        var kindResult = location.Kind switch
         {
             EventLocationKind.Physical when string.IsNullOrWhiteSpace(location.Address) &&
-                                            string.IsNullOrWhiteSpace(location.City) =>
+                                            string.IsNullOrWhiteSpace(location.City) &&
+                                            !(location.Latitude.HasValue && location.Longitude.HasValue) =>
                 Result.Failure(EventErrors.InvalidLocationSegment),
             EventLocationKind.Virtual when string.IsNullOrWhiteSpace(location.Url) =>
                 Result.Failure(EventErrors.InvalidLocationSegment),
             _ => Result.Success()
         };
+
+        if (kindResult.IsFailure)
+        {
+            return kindResult;
+        }
+
+        return ValidateSegmentTimes(location, eventStart, eventEnd);
     }
+
+    private static Result ValidateSegmentTimes(
+        EventLocation location,
+        DateTime eventStart,
+        DateTime eventEnd)
+    {
+        var startsAt = NormalizeSegmentTime(location.StartsAt);
+        var endsAt = NormalizeSegmentTime(location.EndsAt);
+
+        if (startsAt is null && endsAt is null)
+        {
+            return Result.Success();
+        }
+
+        if (startsAt is null || endsAt is null)
+        {
+            return Result.Failure(EventErrors.SegmentTimesIncomplete);
+        }
+
+        if (startsAt >= endsAt)
+        {
+            return Result.Failure(EventErrors.InvalidSegmentTimeRange);
+        }
+
+        if (IsDraftTime(eventStart) || IsDraftTime(eventEnd))
+        {
+            return Result.Success();
+        }
+
+        if (startsAt < eventStart || endsAt > eventEnd)
+        {
+            return Result.Failure(EventErrors.SegmentTimeOutOfBounds);
+        }
+
+        return Result.Success();
+    }
+
+    private static DateTime? NormalizeSegmentTime(DateTime? time) =>
+        time is null || IsDraftTime(time.Value) ? null : time;
 
     private static bool IsDraftTime(DateTime time) =>
         time == EventConstants.DraftEpochUtc;
@@ -455,7 +540,8 @@ public static class EventService
         new()
         {
             Name = source.Name,
-            Date = source.Date,
+            StartsAt = source.StartsAt,
+            EndsAt = source.EndsAt,
             Kind = source.Kind,
             Url = source.Url,
             Address = source.Address,

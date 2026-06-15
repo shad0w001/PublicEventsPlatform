@@ -58,7 +58,8 @@ internal static class EventMapping
         new()
         {
             Name = location.Name,
-            Date = location.Date,
+            StartsAt = location.StartsAt,
+            EndsAt = location.EndsAt,
             Kind = location.Kind,
             Url = location.Url,
             Address = location.Address,
@@ -72,7 +73,8 @@ internal static class EventMapping
     private static EventLocationResponse ToLocationResponse(EventLocation location) =>
         new(
             location.Name,
-            location.Date,
+            location.StartsAt,
+            location.EndsAt,
             location.Kind,
             location.Url,
             location.Address,

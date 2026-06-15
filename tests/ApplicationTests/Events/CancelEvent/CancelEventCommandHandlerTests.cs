@@ -236,7 +236,6 @@ public class CancelEventCommandHandlerTests
                 new EventLocation
                 {
                     Name = "Main Hall",
-                    Date = start,
                     Kind = EventLocationKind.Physical,
                     Address = "123 Main St",
                     City = "Sofia"

@@ -4,7 +4,8 @@ namespace Application.Events;
 
 public sealed record EventLocationResponse(
     string Name,
-    DateTime Date,
+    DateTime? StartsAt,
+    DateTime? EndsAt,
     EventLocationKind Kind,
     string? Url,
     string? Address,

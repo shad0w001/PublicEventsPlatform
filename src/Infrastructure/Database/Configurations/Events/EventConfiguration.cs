@@ -73,8 +73,8 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
                 .IsRequired()
                 .HasMaxLength(200);
 
-            l.Property(x => x.Date)
-                .IsRequired();
+            l.Property(x => x.StartsAt);
+            l.Property(x => x.EndsAt);
 
             l.Property(x => x.Kind)
                 .IsRequired()

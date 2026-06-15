@@ -81,7 +81,6 @@ public class EventModelTests
                     new EventLocation
                     {
                         Name = "Hall",
-                        Date = new DateTime(2026, 8, 1, 18, 0, 0, DateTimeKind.Utc),
                         Kind = EventLocationKind.Physical,
                         Address = "1 Test St",
                         City = "Sofia"
@@ -115,6 +114,23 @@ public class EventModelTests
         Assert.Equal(hostParticipantId, loadedEvent.Organizers[0].ParticipantId);
         Assert.Single(loadedEvent.Locations);
         Assert.Equal("Hall", loadedEvent.Locations[0].Name);
+    }
+
+    [Fact]
+    public void EventLocationModel_Should_ExposeSegmentTimeColumns_When_ApplicationDbContextModelIsBuilt()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act
+        var eventType = context.Model.FindEntityType(typeof(Event));
+        var locationOwnership = eventType?.FindNavigation(nameof(Event.Locations))?.ForeignKey.DeclaringEntityType;
+
+        // Assert
+        Assert.NotNull(locationOwnership);
+        Assert.NotNull(locationOwnership.FindProperty(nameof(EventLocation.StartsAt)));
+        Assert.NotNull(locationOwnership.FindProperty(nameof(EventLocation.EndsAt)));
+        Assert.Null(locationOwnership.FindProperty("Date"));
     }
 
     [Fact]

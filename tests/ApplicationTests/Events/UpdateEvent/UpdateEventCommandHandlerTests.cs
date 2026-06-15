@@ -86,11 +86,12 @@ public class UpdateEventCommandHandlerTests
         await using var context = CreateContext(databaseName);
         var handler = CreateHandler(context, identity);
 
-        var segmentDate = new DateTime(2026, 8, 1, 18, 0, 0, DateTimeKind.Utc);
+        var segmentStart = new DateTime(2026, 8, 1, 18, 0, 0, DateTimeKind.Utc);
+        var segmentEnd = new DateTime(2026, 8, 1, 20, 0, 0, DateTimeKind.Utc);
         var locations = new List<EventLocationResponse>
         {
-            new("Hall A", segmentDate, EventLocationKind.Physical, null, "1 Main St", null, null, "Sofia", "BG", null),
-            new("Live Stream", segmentDate, EventLocationKind.Virtual, "https://stream.example.com", null, null, null, null, null, null)
+            new("Hall A", segmentStart, segmentEnd, EventLocationKind.Physical, null, "1 Main St", null, null, "Sofia", "BG", null),
+            new("Live Stream", null, null, EventLocationKind.Virtual, "https://stream.example.com", null, null, null, null, null, null)
         };
 
         var command = new UpdateEventCommand(eventId, Locations: locations);
@@ -473,7 +474,6 @@ public class UpdateEventCommandHandlerTests
                 new EventLocation
                 {
                     Name = "Main Hall",
-                    Date = start,
                     Kind = EventLocationKind.Physical,
                     Address = "123 Main St",
                     City = "Sofia"

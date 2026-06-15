@@ -68,6 +68,18 @@ public static class EventErrors
         "Events.InvalidLocationSegment",
         "One or more location segments are invalid");
 
+    public static readonly Error SegmentTimesIncomplete = Error.Validation(
+        "Events.SegmentTimesIncomplete",
+        "Location segment start and end times must both be set or both omitted");
+
+    public static readonly Error InvalidSegmentTimeRange = Error.Validation(
+        "Events.InvalidSegmentTimeRange",
+        "Location segment end time must be after start time");
+
+    public static readonly Error SegmentTimeOutOfBounds = Error.Validation(
+        "Events.SegmentTimeOutOfBounds",
+        "Location segment times must fall within the event start and end times");
+
     public static readonly Error CannotModifyCancelled = Error.Conflict(
         "Events.CannotModifyCancelled",
         "Cancelled events cannot be modified");

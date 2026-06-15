@@ -146,7 +146,6 @@ public class EventUpdateTests
                 new Domain.Events.EventLocations.EventLocation
                 {
                     Name = "Bad Venue",
-                    Date = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc),
                     Kind = Domain.Events.EventLocations.EventLocationKind.Physical
                 }
             ]
