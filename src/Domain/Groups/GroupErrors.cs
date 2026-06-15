@@ -12,10 +12,6 @@ public static class GroupErrors
         "Groups.Deleted",
         $"The group with the Id = '{groupId}' has been deleted");
 
-    public static Error Forbidden() => Error.Forbidden(
-        "Groups.Forbidden",
-        "You are not authorized to perform this action on this group");
-
     public static Error InsufficientPermissions() => Error.Forbidden(
         "Groups.InsufficientPermissions",
         "Your role does not permit this action");

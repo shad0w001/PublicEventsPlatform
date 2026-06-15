@@ -1,23 +1,15 @@
 ﻿using Domain.Events;
 using SharedKernel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Domain.Plugins
+namespace Domain.Plugins;
+
+public class PluginUsage : Entity
 {
-    public class PluginUsage : Entity
-    {
-        public Guid PluginId { get; set; }
-        public Guid EventId { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public bool IsActive { get; set; }
-        public List<PluginData> Data { get; set; } = new();
+    public Guid PluginId { get; internal set; }
+    public Guid EventId { get; internal set; }
+    public bool IsActive { get; internal set; }
+    public List<PluginData> Data { get; internal set; } = [];
 
-        public Plugin Plugin { get; set; }
-        public Event Event { get; set; }
-
-        }
+    public Plugin Plugin { get; internal set; } = null!;
+    public Event Event { get; internal set; } = null!;
 }

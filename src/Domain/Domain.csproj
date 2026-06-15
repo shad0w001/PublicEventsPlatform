@@ -10,4 +10,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DomainTests" />
+    <InternalsVisibleTo Include="ApplicationTests" />
+  </ItemGroup>
+
 </Project>

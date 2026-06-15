@@ -29,6 +29,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AdmissionType")
+                        .HasColumnType("text");
+
                     b.Property<string>("BannerImageUrl")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -37,6 +40,12 @@ namespace Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
@@ -50,12 +59,23 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TimeZoneId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -65,6 +85,12 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PublishedAt");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("events", "public");
                 });
@@ -217,10 +243,10 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Author")
+                    b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -241,6 +267,9 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique();
+
                     b.ToTable("plugins", "public");
                 });
 
@@ -255,7 +284,8 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Key")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<Guid>("PluginUsageId")
                         .HasColumnType("uuid");
@@ -265,7 +295,8 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PluginUsageId");
+                    b.HasIndex("PluginUsageId", "Key")
+                        .IsUnique();
 
                     b.ToTable("plugin_data", "public");
                 });
@@ -386,6 +417,11 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.OwnsMany("Domain.Events.EventLocations.EventLocation", "Locations", b1 =>
                         {
                             b1.Property<Guid>("Id")
@@ -404,7 +440,7 @@ namespace Infrastructure.Migrations
                                 .HasMaxLength(200)
                                 .HasColumnType("character varying(200)");
 
-                            b1.Property<DateTime>("Date")
+                            b1.Property<DateTime?>("EndsAt")
                                 .HasColumnType("timestamp with time zone");
 
                             b1.Property<Guid>("EventId")
@@ -428,6 +464,9 @@ namespace Infrastructure.Migrations
                                 .IsRequired()
                                 .HasMaxLength(200)
                                 .HasColumnType("character varying(200)");
+
+                            b1.Property<DateTime?>("StartsAt")
+                                .HasColumnType("timestamp with time zone");
 
                             b1.Property<string>("Url")
                                 .HasMaxLength(500)

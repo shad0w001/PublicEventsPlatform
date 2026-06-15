@@ -1,4 +1,6 @@
+using Domain.Events;
 using Domain.Groups;
+using Domain.Plugins;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +12,11 @@ public interface IApplicationDbContext
     DbSet<Group> Groups { get; }
     DbSet<GroupMembership> GroupMemberships { get; }
     DbSet<GroupJoinApplication> GroupJoinApplications { get; }
+    DbSet<Event> Events { get; }
+    DbSet<EventOrganizer> EventOrganizers { get; }
+    DbSet<EventCategory> EventCategories { get; }
+    DbSet<Plugin> Plugins { get; }
+    DbSet<PluginUsage> PluginUsages { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

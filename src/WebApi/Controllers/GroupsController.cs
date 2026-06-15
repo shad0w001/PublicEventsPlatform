@@ -1,4 +1,5 @@
 using Application.Abstractions.Authentication;
+using Application.Abstractions.Media;
 using Application.Abstractions.Messaging;
 using Application.Groups;
 using Application.Groups.CancelGroupJoinApplication;
@@ -15,9 +16,11 @@ using Application.Groups.RemoveGroupMember;
 using Application.Groups.SubmitGroupJoinApplication;
 using Application.Groups.TransferOwnership;
 using Application.Groups.UpdateGroup;
+using Application.Groups.UploadGroupProfileImage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using SharedKernel;
 using WebApi.Extensions;
 
 namespace WebApi.Controllers;
@@ -39,7 +42,8 @@ public sealed class GroupsController(
     ICommandHandler<SubmitGroupJoinApplicationCommand, GroupJoinApplicationResponse> submitApplicationHandler,
     IQueryHandler<ListGroupJoinApplicationsQuery, IReadOnlyList<GroupJoinApplicationResponse>> listApplicationsHandler,
     ICommandHandler<DecideGroupJoinApplicationCommand> decideApplicationHandler,
-    ICommandHandler<CancelGroupJoinApplicationCommand> cancelApplicationHandler) : ControllerBase
+    ICommandHandler<CancelGroupJoinApplicationCommand> cancelApplicationHandler,
+    ICommandHandler<UploadGroupProfileImageCommand, GroupResponse> uploadGroupProfileImageHandler) : ControllerBase
 {
     [Authorize]
     [HttpPost]
@@ -127,6 +131,40 @@ public sealed class GroupsController(
             request.JoinPolicy);
 
         var result = await updateGroupHandler.Handle(command, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpPost("{groupId:guid}/profile-image")]
+    [Consumes("multipart/form-data")]
+    [SwaggerOperation(
+        Summary = "Upload group profile image",
+        Description = """
+            Uploads a profile image for the organization. Requires verified email and Administrator or Owner role.
+            Accepts JPEG, PNG, or WebP up to profile limits; stored as WebP under /uploads/groups/.
+            Alternative to setting profileImageUrl via PATCH. Returns 200 with the updated group.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Profile image uploaded", typeof(GroupResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid or missing file", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified or insufficient role", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Group not found or deleted", typeof(ProblemDetails))]
+    public async Task<IActionResult> UploadProfileImage(
+        Guid groupId,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file.Length == 0)
+        {
+            return Result.Failure<GroupResponse>(MediaErrors.EmptyFile).ToActionResult();
+        }
+
+        await using var stream = file.OpenReadStream();
+        var upload = new MediaUploadRequest(stream, file.ContentType, file.Length, file.FileName);
+        var result = await uploadGroupProfileImageHandler.Handle(
+            new UploadGroupProfileImageCommand(groupId, upload),
+            cancellationToken);
+
         return result.ToActionResult();
     }
 

@@ -10,7 +10,8 @@ namespace Domain.Events.EventLocations
     public class EventLocation
     {
         public string Name { get; set; }
-        public DateTime Date { get; set; }
+        public DateTime? StartsAt { get; set; }
+        public DateTime? EndsAt { get; set; }
         public EventLocationKind Kind { get; set; }
 
         public string? Url { get; set; }
