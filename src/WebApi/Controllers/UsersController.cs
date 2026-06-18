@@ -1,4 +1,6 @@
 using Application.Abstractions.Messaging;
+using Application.Events;
+using Application.Events.ListMyRsvps;
 using Application.Users;
 using Application.Users.GetMe;
 using Application.Users.ListMyJoinApplications;
@@ -14,7 +16,8 @@ namespace WebApi.Controllers;
 [SwaggerTag("Users")]
 public sealed class UsersController(
     IQueryHandler<GetCurrentUserQuery, UserResponse> getMeHandler,
-    IQueryHandler<ListMyJoinApplicationsQuery, IReadOnlyList<MyJoinApplicationResponse>> listMyApplicationsHandler)
+    IQueryHandler<ListMyJoinApplicationsQuery, IReadOnlyList<MyJoinApplicationResponse>> listMyApplicationsHandler,
+    IQueryHandler<ListMyRsvpsQuery, IReadOnlyList<MyRsvpListItemResponse>> listMyRsvpsHandler)
     : ControllerBase
 {
     [Authorize]
@@ -47,6 +50,26 @@ public sealed class UsersController(
     public async Task<IActionResult> ListMyApplications(CancellationToken cancellationToken)
     {
         var result = await listMyApplicationsHandler.Handle(new ListMyJoinApplicationsQuery(), cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpGet("me/rsvps")]
+    [SwaggerOperation(
+        Summary = "List my free-event RSVPs",
+        Description = """
+            Returns free events where the caller has an EventAttendee row as themselves or as an Organizer+ group.
+            Requires verified email. Includes Going and Interested only (NotGoing excluded).
+            Events must be published or cancelled; drafts and soft-deleted events are omitted.
+            Sorted by startTime ascending, then registeredAt descending.
+            Paid tickets are listed separately in Phase 6 (/me/tickets); the SPA merges both on "My tickets / RSVPs".
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "RSVP list", typeof(IReadOnlyList<MyRsvpListItemResponse>))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified", typeof(ProblemDetails))]
+    public async Task<IActionResult> ListMyRsvps(CancellationToken cancellationToken)
+    {
+        var result = await listMyRsvpsHandler.Handle(new ListMyRsvpsQuery(), cancellationToken);
         return result.ToActionResult();
     }
 }

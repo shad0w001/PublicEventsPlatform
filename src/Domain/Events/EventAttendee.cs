@@ -13,4 +13,11 @@ public class EventAttendee
     public DateTime? RegisteredAt { get; set; }
     public DateTime? CheckedInAt { get; set; }
     public EventAttendeeStatus Status { get; set; }
+
+    public static EventAttendee Create(Guid eventId, Guid participantId) =>
+        new()
+        {
+            EventId = eventId,
+            ParticipantId = participantId
+        };
 }

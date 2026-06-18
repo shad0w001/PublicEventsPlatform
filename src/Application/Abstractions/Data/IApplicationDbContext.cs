@@ -14,6 +14,7 @@ public interface IApplicationDbContext
     DbSet<GroupJoinApplication> GroupJoinApplications { get; }
     DbSet<Event> Events { get; }
     DbSet<EventOrganizer> EventOrganizers { get; }
+    DbSet<EventAttendee> EventAttendees { get; }
     DbSet<EventCategory> EventCategories { get; }
     DbSet<Plugin> Plugins { get; }
     DbSet<PluginUsage> PluginUsages { get; }

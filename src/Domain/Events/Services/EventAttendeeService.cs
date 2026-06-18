@@ -102,12 +102,8 @@ public static class EventAttendeeService
             return existing;
         }
 
-        var attendee = new EventAttendee
-        {
-            EventId = @event.Id,
-            ParticipantId = participantId,
-            Event = @event
-        };
+        var attendee = EventAttendee.Create(@event.Id, participantId);
+        attendee.Event = @event;
 
         @event.Attendees.Add(attendee);
         return attendee;

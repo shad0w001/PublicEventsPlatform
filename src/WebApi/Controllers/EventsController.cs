@@ -69,7 +69,7 @@ public sealed class EventsController(
             Returns non-deleted events the verified caller can edit: self-hosted or group-hosted with current Organizer+ membership.
             Includes Draft, Published, and Cancelled.
             Sorted by status (Draft, Published, Cancelled), then StartTime ascending, then CreatedAt descending.
-            Attending/RSVP events are not included (Phase 5). Returns 200 with an empty list when none match.
+            Attending/RSVP events are listed at GET /api/users/me/rsvps. Returns 200 with an empty list when none match.
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "Manageable events", typeof(IReadOnlyList<MyEventListItemResponse>))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
