@@ -197,8 +197,8 @@ public class ApplicationDbContextTests
             {
                 EventId = evt.Id,
                 ParticipantId = user.Id,
-                Status = EventAttendeeStatus.Invited,
-                RegisteredAt = null,
+                Status = EventAttendeeStatus.Going,
+                RegisteredAt = DateTime.UtcNow,
                 Event = evt,
                 Participant = user
             });
@@ -221,8 +221,8 @@ public class ApplicationDbContextTests
 
         Assert.Single(loadedEvent.Attendees);
         Assert.Equal(user.Id, loadedEvent.Attendees[0].ParticipantId);
-        Assert.Null(loadedEvent.Attendees[0].RegisteredAt);
-        Assert.Equal(EventAttendeeStatus.Invited, loadedEvent.Attendees[0].Status);
+        Assert.NotNull(loadedEvent.Attendees[0].RegisteredAt);
+        Assert.Equal(EventAttendeeStatus.Going, loadedEvent.Attendees[0].Status);
     }
 
     private static ApplicationDbContext CreateContext(string? databaseName = null)
