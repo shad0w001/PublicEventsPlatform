@@ -117,6 +117,7 @@ internal sealed class EventAccessService(IApplicationDbContext context)
         var @event = await context.Events
             .Include(e => e.Organizers)
             .Include(e => e.Locations)
+            .Include(e => e.Attendees)
             .Include(e => e.Plugins).ThenInclude(u => u.Data)
             .Include(e => e.Plugins).ThenInclude(u => u.Plugin)
             .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
@@ -133,6 +134,18 @@ internal sealed class EventAccessService(IApplicationDbContext context)
 
         return @event;
     }
+
+    public async Task<IReadOnlyList<Guid>> GetOrganizerPlusGroupIdsAsync(
+        Guid userId,
+        CancellationToken cancellationToken) =>
+        await context.GroupMemberships
+            .AsNoTracking()
+            .Where(m => m.UserId == userId &&
+                        (m.Role == GroupMemberRole.Organizer ||
+                         m.Role == GroupMemberRole.Administrator ||
+                         m.Role == GroupMemberRole.Owner))
+            .Select(m => m.GroupId)
+            .ToListAsync(cancellationToken);
 
     public Guid GetHostParticipantId(Event @event) =>
         @event.Organizers.Single().ParticipantId;

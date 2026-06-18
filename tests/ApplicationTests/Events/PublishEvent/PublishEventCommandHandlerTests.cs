@@ -66,6 +66,81 @@ public class PublishEventCommandHandlerTests
     }
 
     [Fact]
+    public async Task PublishEventCommandHandler_Should_AddHostGoingAttendee_When_FreeEventIsPublished()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-host-rsvp", "host-rsvp@example.com");
+        var eventId = await SeedPublishReadyDraftAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+        var user = await context.Users.SingleAsync();
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        await using var verifyContext = CreateContext(databaseName);
+        var attendee = await verifyContext.EventAttendees.SingleAsync();
+        Assert.Equal(user.Id, attendee.ParticipantId);
+        Assert.Equal(EventAttendeeStatus.Going, attendee.Status);
+        Assert.NotNull(attendee.RegisteredAt);
+    }
+
+    [Fact]
+    public async Task PublishEventCommandHandler_Should_NotAddAttendee_When_PaidEventIsPublished()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-paid-no-rsvp", "paid-no-rsvp@example.com");
+        var eventId = await SeedPublishReadyDraftAsync(
+            databaseName,
+            identity,
+            admissionType: AdmissionType.Paid);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Empty(await context.EventAttendees.ToListAsync());
+    }
+
+    [Fact]
+    public async Task PublishEventCommandHandler_Should_AddGroupHostGoingAttendee_When_GroupHostsFreeEvent()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var owner = CreateUser("auth0|pub-rsvp-org-owner", "rsvp-owner@org.example.com");
+        var organizer = CreateUser("auth0|pub-rsvp-org-organizer", "rsvp-organizer@org.example.com");
+        var group = SeedGroupWithMember(databaseName, owner, organizer, GroupMemberRole.Organizer);
+        var organizerIdentity = CreateVerifiedIdentity("auth0|pub-rsvp-org-organizer", "rsvp-organizer@org.example.com");
+        var eventId = await SeedPublishReadyDraftForHostAsync(
+            databaseName,
+            organizerIdentity,
+            group.Id,
+            "Group RSVP Publish");
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, organizerIdentity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        await using var verifyContext = CreateContext(databaseName);
+        var attendee = await verifyContext.EventAttendees.SingleAsync();
+        Assert.Equal(group.Id, attendee.ParticipantId);
+        Assert.Equal(EventAttendeeStatus.Going, attendee.Status);
+        Assert.NotNull(attendee.RegisteredAt);
+    }
+
+    [Fact]
     public async Task PublishEventCommandHandler_Should_Publish_When_SegmentTimesNull()
     {
         // Arrange

@@ -93,6 +93,10 @@ public sealed class EventsController(
             (startTime–endTime) for display; clients derive locally—no server-side effective* fields.
             Public and EditDetail include plugins[] (EventPluginResponse: pluginId, code, name, data, attachedAt),
             sorted newest attach first; empty array when none; present on cancelled events (read-only when CanEdit is false).
+            Free published/cancelled events include rsvpSummary on public and editDetail (goingCount, interestedCount,
+            responseCount). Paid and draft events omit rsvpSummary (null). Anonymous callers receive counts only;
+            authenticated callers also receive myStatuses[] for self and Organizer+ groups with existing RSVP rows
+            (includes NotGoing for button state). Mutation responses (PATCH, publish, RSVP) omit rsvpSummary—use GET.
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "Event view", typeof(GetEventResponse))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Event not found, deleted, or draft hidden", typeof(ProblemDetails))]

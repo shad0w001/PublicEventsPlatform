@@ -84,6 +84,8 @@ internal sealed class PublishEventCommandHandler(
             return Result.Failure<EventDetailResponse>(venueResult.Error);
         }
 
+        EventAttendeeService.EnsureHostGoing(@event, DateTime.UtcNow);
+
         await context.SaveChangesAsync(cancellationToken);
 
         var categoryName = await EventCategoryLookup.ResolveNameAsync(

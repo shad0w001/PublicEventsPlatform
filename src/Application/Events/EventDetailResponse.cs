@@ -23,4 +23,5 @@ public sealed record EventDetailResponse(
     DateTime CreatedAt,
     DateTime? PublishedAt,
     IReadOnlyList<EventLocationResponse> Locations,
-    IReadOnlyList<EventPluginResponse> Plugins);
+    IReadOnlyList<EventPluginResponse> Plugins,
+    EventRsvpSummaryResponse? RsvpSummary = null);

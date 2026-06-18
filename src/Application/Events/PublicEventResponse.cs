@@ -20,4 +20,5 @@ public sealed record PublicEventResponse(
     string HostDisplayName,
     bool HostIsGroup,
     IReadOnlyList<EventLocationResponse> Locations,
-    IReadOnlyList<EventPluginResponse> Plugins);
+    IReadOnlyList<EventPluginResponse> Plugins,
+    EventRsvpSummaryResponse? RsvpSummary = null);

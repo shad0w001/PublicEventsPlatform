@@ -86,8 +86,37 @@ internal sealed class GetEventQueryHandler(
                 @event,
                 editAccessResult.Value,
                 categoryName,
-                plugins),
+                plugins,
+                rsvpSummary: null),
             CanEdit: true);
+    }
+
+    private async Task<EventRsvpSummaryResponse?> BuildRsvpSummaryAsync(
+        Event @event,
+        CancellationToken cancellationToken)
+    {
+        if (@event.Status == EventStatus.Draft)
+        {
+            return null;
+        }
+
+        Guid? userId = null;
+        HashSet<Guid> organizerPlusGroupIds = [];
+
+        if (identityAccessor.IsAuthenticated)
+        {
+            var userResult = await currentUserService.GetOrProvisionAsync(cancellationToken);
+            if (userResult.IsSuccess)
+            {
+                userId = userResult.Value.Id;
+                var groupIds = await eventAccessService.GetOrganizerPlusGroupIdsAsync(
+                    userId.Value,
+                    cancellationToken);
+                organizerPlusGroupIds = groupIds.ToHashSet();
+            }
+        }
+
+        return EventRsvpMapping.BuildSummary(@event, userId, organizerPlusGroupIds);
     }
 
     private async Task<Result<GetEventResponse>> HandlePublicGetAsync(
@@ -114,6 +143,7 @@ internal sealed class GetEventQueryHandler(
                         cancellationToken);
 
                     var editorPlugins = PluginMapping.ToEventPluginResponses(@event.Plugins);
+                    var rsvpSummary = await BuildRsvpSummaryAsync(@event, cancellationToken);
 
                     return new GetEventResponse(
                         Public: null,
@@ -121,7 +151,8 @@ internal sealed class GetEventQueryHandler(
                             @event,
                             editAccessResult.Value,
                             editorCategoryName,
-                            editorPlugins),
+                            editorPlugins,
+                            rsvpSummary),
                         CanEdit: @event.Status != EventStatus.Cancelled);
                 }
             }
@@ -145,13 +176,15 @@ internal sealed class GetEventQueryHandler(
             cancellationToken);
 
         var plugins = PluginMapping.ToEventPluginResponses(@event.Plugins);
+        var publicRsvpSummary = await BuildRsvpSummaryAsync(@event, cancellationToken);
 
         var publicResponse = EventMapping.ToPublicResponse(
             @event,
             hostDisplayName,
             hostIsGroup,
             categoryName,
-            plugins);
+            plugins,
+            publicRsvpSummary);
 
         return new GetEventResponse(publicResponse, EditDetail: null, CanEdit: false);
     }

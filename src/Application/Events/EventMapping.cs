@@ -11,7 +11,8 @@ internal static class EventMapping
         Event @event,
         EventEditAccess editAccess,
         string? categoryName,
-        IReadOnlyList<EventPluginResponse>? plugins = null) =>
+        IReadOnlyList<EventPluginResponse>? plugins = null,
+        EventRsvpSummaryResponse? rsvpSummary = null) =>
         new(
             @event.Id,
             @event.Tier,
@@ -32,14 +33,16 @@ internal static class EventMapping
             @event.CreatedAt,
             @event.PublishedAt,
             @event.Locations.Select(ToLocationResponse).ToList(),
-            plugins ?? []);
+            plugins ?? [],
+            rsvpSummary);
 
     public static PublicEventResponse ToPublicResponse(
         Event @event,
         string hostDisplayName,
         bool hostIsGroup,
         string? categoryName,
-        IReadOnlyList<EventPluginResponse>? plugins = null) =>
+        IReadOnlyList<EventPluginResponse>? plugins = null,
+        EventRsvpSummaryResponse? rsvpSummary = null) =>
         new(
             @event.Tier,
             @event.Title,
@@ -57,7 +60,8 @@ internal static class EventMapping
             hostDisplayName,
             hostIsGroup,
             @event.Locations.Select(ToLocationResponse).ToList(),
-            plugins ?? []);
+            plugins ?? [],
+            rsvpSummary);
 
     public static EventLocation ToDomainLocation(EventLocationResponse location) =>
         new()
