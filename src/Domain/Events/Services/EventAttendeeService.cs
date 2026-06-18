@@ -1,3 +1,4 @@
+using Domain.Events.Events;
 using SharedKernel;
 
 namespace Domain.Events.Services;
@@ -17,14 +18,26 @@ public static class EventAttendeeService
             return Result.Failure<EventAttendee>(eligibilityResult.Error);
         }
 
-        if (participantId == hostParticipantId && status == EventAttendeeStatus.NotGoing)
+        if (participantId == hostParticipantId && status != EventAttendeeStatus.Going)
         {
-            return Result.Failure<EventAttendee>(EventAttendeeErrors.HostCannotSetNotGoing);
+            return Result.Failure<EventAttendee>(EventAttendeeErrors.HostMustRemainGoing);
         }
 
-        var attendee = FindOrCreateAttendee(@event, participantId);
+        var existing = @event.Attendees.FirstOrDefault(a => a.ParticipantId == participantId);
+        var previousStatus = existing?.Status;
+
+        var attendee = FindOrCreateAttendee(@event, participantId, existing);
         ApplyRegisteredAt(attendee, status, utcNow);
         attendee.Status = status;
+
+        if (previousStatus != status)
+        {
+            @event.Raise(new EventRsvpStatusChanged(
+                @event.Id,
+                participantId,
+                status,
+                previousStatus));
+        }
 
         return attendee;
     }
@@ -37,7 +50,8 @@ public static class EventAttendeeService
         }
 
         var hostParticipantId = @event.Organizers.Single().ParticipantId;
-        var attendee = FindOrCreateAttendee(@event, hostParticipantId);
+        var existing = @event.Attendees.FirstOrDefault(a => a.ParticipantId == hostParticipantId);
+        var attendee = FindOrCreateAttendee(@event, hostParticipantId, existing);
         ApplyRegisteredAt(attendee, EventAttendeeStatus.Going, utcNow);
         attendee.Status = EventAttendeeStatus.Going;
 
@@ -78,9 +92,11 @@ public static class EventAttendeeService
         return Result.Success();
     }
 
-    private static EventAttendee FindOrCreateAttendee(Event @event, Guid participantId)
+    private static EventAttendee FindOrCreateAttendee(
+        Event @event,
+        Guid participantId,
+        EventAttendee? existing)
     {
-        var existing = @event.Attendees.FirstOrDefault(a => a.ParticipantId == participantId);
         if (existing is not null)
         {
             return existing;

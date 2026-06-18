@@ -8,6 +8,7 @@ using Application.Events.DeleteEvent;
 using Application.Events.GetEvent;
 using Application.Events.ListMyEvents;
 using Application.Events.PublishEvent;
+using Application.Events.SetEventRsvp;
 using Application.Events.UpdateEvent;
 using Application.Events.UploadEventBanner;
 using Domain.Events;
@@ -30,7 +31,8 @@ public sealed class EventsController(
     ICommandHandler<PublishEventCommand, EventDetailResponse> publishEventHandler,
     ICommandHandler<UploadEventBannerCommand, EventDetailResponse> uploadEventBannerHandler,
     ICommandHandler<CancelEventCommand> cancelEventHandler,
-    ICommandHandler<DeleteEventCommand> deleteEventHandler) : ControllerBase
+    ICommandHandler<DeleteEventCommand> deleteEventHandler,
+    ICommandHandler<SetEventRsvpCommand, EventRsvpResponse> setEventRsvpHandler) : ControllerBase
 {
     [Authorize]
     [HttpPost]
@@ -208,6 +210,35 @@ public sealed class EventsController(
     }
 
     [Authorize]
+    [HttpPut("{eventId:guid}/rsvp")]
+    [SwaggerOperation(
+        Summary = "Set free-event RSVP status",
+        Description = """
+            Sets RSVP status (Going, Interested, NotGoing) for the caller or a group they represent.
+            Requires verified email. Only published free-admission events accept RSVPs.
+            participantId omitted or equal to the caller = RSVP as self. participantId = group id requires Organizer+ on that group.
+            The event host participant must remain Going (EventAttendees.HostMustRemainGoing).
+            Cancelled events reject changes (Events.CannotModifyCancelled). Paid events return EventAttendees.PaidAdmissionNotAllowed.
+            Raises EventRsvpStatusChanged when status changes (notification consumers in Phase 7).
+            Returns 200 with the updated RSVP row.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "RSVP updated", typeof(EventRsvpResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid status or EventAttendees.PaidAdmissionNotAllowed or EventAttendees.HostMustRemainGoing", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified or Events.InsufficientHostPermissions", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Event not found, deleted, or Events.HostNotFound", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Draft (Events.NotPublished) or cancelled (Events.CannotModifyCancelled)", typeof(ProblemDetails))]
+    public async Task<IActionResult> SetRsvp(
+        Guid eventId,
+        [FromBody] SetEventRsvpRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SetEventRsvpCommand(eventId, request.ParticipantId, request.Status);
+        var result = await setEventRsvpHandler.Handle(command, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
     [HttpPost("{eventId:guid}/cancel")]
     [SwaggerOperation(
         Summary = "Cancel a published event",
@@ -261,3 +292,8 @@ public sealed record UpdateEventRequest(
     DateTime? EndTime = null,
     string? TimeZoneId = null,
     AdmissionType? AdmissionType = null);
+
+/// <summary>Free-event RSVP body. participantId optional (defaults to caller).</summary>
+public sealed record SetEventRsvpRequest(
+    Guid? ParticipantId,
+    EventAttendeeStatus Status);

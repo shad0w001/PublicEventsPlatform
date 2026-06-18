@@ -11,3 +11,9 @@ public sealed record EventPublished(Guid EventId, Guid HostParticipantId) : Doma
 public sealed record EventCancelled(Guid EventId) : DomainEvent;
 
 public sealed record EventSoftDeleted(Guid EventId) : DomainEvent;
+
+public sealed record EventRsvpStatusChanged(
+    Guid EventId,
+    Guid ParticipantId,
+    EventAttendeeStatus Status,
+    EventAttendeeStatus? PreviousStatus) : DomainEvent;

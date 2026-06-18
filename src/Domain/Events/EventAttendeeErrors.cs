@@ -8,7 +8,7 @@ public static class EventAttendeeErrors
         "EventAttendees.PaidAdmissionNotAllowed",
         "RSVP is only available on free-admission events");
 
-    public static readonly Error HostCannotSetNotGoing = Error.Validation(
-        "EventAttendees.HostCannotSetNotGoing",
-        "The event host cannot set their RSVP status to not going");
+    public static readonly Error HostMustRemainGoing = Error.Validation(
+        "EventAttendees.HostMustRemainGoing",
+        "The event host RSVP status must remain going");
 }

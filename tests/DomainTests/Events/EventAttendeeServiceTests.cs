@@ -1,4 +1,5 @@
 using Domain.Events;
+using Domain.Events.Events;
 using Domain.Events.Services;
 
 namespace DomainTests.Events;
@@ -185,7 +186,7 @@ public class EventAttendeeServiceTests
     }
 
     [Fact]
-    public void SetRsvpStatus_Should_ReturnHostCannotSetNotGoing_When_HostSetsNotGoing()
+    public void SetRsvpStatus_Should_ReturnHostMustRemainGoing_When_HostSetsNotGoing()
     {
         // Arrange
         var eventEntity = EventTestData.MakePublished();
@@ -200,11 +201,11 @@ public class EventAttendeeServiceTests
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal(EventAttendeeErrors.HostCannotSetNotGoing.Code, result.Error.Code);
+        Assert.Equal(EventAttendeeErrors.HostMustRemainGoing.Code, result.Error.Code);
     }
 
     [Fact]
-    public void SetRsvpStatus_Should_Succeed_When_HostSetsInterested()
+    public void SetRsvpStatus_Should_ReturnHostMustRemainGoing_When_HostSetsInterested()
     {
         // Arrange
         var eventEntity = EventTestData.MakePublished();
@@ -218,9 +219,58 @@ public class EventAttendeeServiceTests
             UtcNow);
 
         // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(EventAttendeeErrors.HostMustRemainGoing.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public void SetRsvpStatus_Should_RaiseEventRsvpStatusChanged_When_StatusChanges()
+    {
+        // Arrange
+        var eventEntity = EventTestData.MakePublished();
+        eventEntity.ClearDomainEvents();
+
+        // Act
+        var result = EventAttendeeService.SetRsvpStatus(
+            eventEntity,
+            AttendeeParticipantId,
+            EventTestData.HostParticipantId,
+            EventAttendeeStatus.Going,
+            UtcNow);
+
+        // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(EventAttendeeStatus.Interested, result.Value.Status);
-        Assert.Equal(UtcNow, result.Value.RegisteredAt);
+        var domainEvent = Assert.Single(eventEntity.DomainEvents.OfType<EventRsvpStatusChanged>());
+        Assert.Equal(eventEntity.Id, domainEvent.EventId);
+        Assert.Equal(AttendeeParticipantId, domainEvent.ParticipantId);
+        Assert.Equal(EventAttendeeStatus.Going, domainEvent.Status);
+        Assert.Null(domainEvent.PreviousStatus);
+    }
+
+    [Fact]
+    public void SetRsvpStatus_Should_NotRaiseEventRsvpStatusChanged_When_StatusIsUnchanged()
+    {
+        // Arrange
+        var eventEntity = EventTestData.MakePublished();
+        EventAttendeeService.SetRsvpStatus(
+            eventEntity,
+            AttendeeParticipantId,
+            EventTestData.HostParticipantId,
+            EventAttendeeStatus.Going,
+            UtcNow);
+        eventEntity.ClearDomainEvents();
+
+        // Act
+        var result = EventAttendeeService.SetRsvpStatus(
+            eventEntity,
+            AttendeeParticipantId,
+            EventTestData.HostParticipantId,
+            EventAttendeeStatus.Going,
+            UtcNow.AddHours(1));
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Empty(eventEntity.DomainEvents);
     }
 
     [Fact]
