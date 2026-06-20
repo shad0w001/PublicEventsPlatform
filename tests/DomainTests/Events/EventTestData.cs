@@ -67,4 +67,23 @@ internal static class EventTestData
             Kind = EventLocationKind.Virtual,
             Url = "https://stream.example.com/live"
         };
+
+    internal static Event MakePublished(Event? eventEntity = null, int recentPublishCount = 0)
+    {
+        var (draft, _) = eventEntity is null ? CreateDraft() : (eventEntity, (EventOrganizer?)null);
+        MakePublishReady(draft);
+
+        var publishResult = EventService.Publish(
+            draft,
+            categoryExists: true,
+            recentPublishCount,
+            maxPublishesPerWeek: 6);
+
+        if (publishResult.IsFailure)
+        {
+            throw new InvalidOperationException(publishResult.Error.Message);
+        }
+
+        return draft;
+    }
 }

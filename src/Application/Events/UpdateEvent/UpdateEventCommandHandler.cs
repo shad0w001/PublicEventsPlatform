@@ -42,12 +42,16 @@ internal sealed class UpdateEventCommandHandler(
 
         var user = userResult.Value;
 
-        var eventResult = command.Tier is not null
-            ? await eventAccessService.GetActiveEventWithPluginsAsync(
+        var eventResult = command.AdmissionType is not null
+            ? await eventAccessService.GetActiveEventForAdmissionTypeUpdateAsync(
                 command.EventId,
-                includePluginData: false,
                 cancellationToken)
-            : await eventAccessService.GetActiveEventAsync(command.EventId, cancellationToken);
+            : command.Tier is not null
+                ? await eventAccessService.GetActiveEventWithPluginsAsync(
+                    command.EventId,
+                    includePluginData: false,
+                    cancellationToken)
+                : await eventAccessService.GetActiveEventAsync(command.EventId, cancellationToken);
 
         if (eventResult.IsFailure)
         {
@@ -123,7 +127,7 @@ internal sealed class UpdateEventCommandHandler(
             @event.CategoryId,
             cancellationToken);
 
-        return EventMapping.ToDetailResponse(@event, editAccess, categoryName);
+        return EventMapping.ToDetailResponse(@event, editAccess, categoryName, ticketTypes: []);
     }
 
     private static bool ShouldCheckVenueConflict(Event @event, UpdateEventCommand command) =>

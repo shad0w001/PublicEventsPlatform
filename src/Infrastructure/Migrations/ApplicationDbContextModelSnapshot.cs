@@ -103,16 +103,15 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("ParticipantId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("CheckedInAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTime?>("RegisteredAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("TicketCount")
+                        .HasColumnType("integer");
 
                     b.HasKey("EventId", "ParticipantId");
 
@@ -327,6 +326,183 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("plugin_usages", "public");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CheckoutSessionId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PaymentIntentId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("TicketTypeId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CheckoutSessionId")
+                        .IsUnique()
+                        .HasFilter("\"CheckoutSessionId\" IS NOT NULL");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("ParticipantId");
+
+                    b.HasIndex("TicketTypeId");
+
+                    b.ToTable("orders", "public");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.Ticket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TicketTypeId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ParticipantId");
+
+                    b.HasIndex("TicketTypeId");
+
+                    b.ToTable("tickets", "public");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.TicketCode", b =>
+                {
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ManualCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.HasKey("TicketId");
+
+                    b.HasIndex("ManualCode")
+                        .IsUnique();
+
+                    b.ToTable("ticket_codes", "public");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.TicketType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("PriceCents")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ReservedQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SoldQuantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("ticket_types", "public");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.TicketValidation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ValidatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketId");
+
+                    b.ToTable("ticket_validations", "public");
                 });
 
             modelBuilder.Entity("Domain.Groups.Group", b =>
@@ -603,6 +779,101 @@ namespace Infrastructure.Migrations
                     b.Navigation("Plugin");
                 });
 
+            modelBuilder.Entity("Domain.Tickets.Order", b =>
+                {
+                    b.HasOne("Domain.Events.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Participants.Participant", "Participant")
+                        .WithMany("Orders")
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Tickets.TicketType", "TicketType")
+                        .WithMany("Orders")
+                        .HasForeignKey("TicketTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("Participant");
+
+                    b.Navigation("TicketType");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.Ticket", b =>
+                {
+                    b.HasOne("Domain.Events.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Tickets.Order", "Order")
+                        .WithMany("Tickets")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Participants.Participant", "Participant")
+                        .WithMany("Tickets")
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Tickets.TicketType", "TicketType")
+                        .WithMany("Tickets")
+                        .HasForeignKey("TicketTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Participant");
+
+                    b.Navigation("TicketType");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.TicketCode", b =>
+                {
+                    b.HasOne("Domain.Tickets.Ticket", "Ticket")
+                        .WithOne("TicketCode")
+                        .HasForeignKey("Domain.Tickets.TicketCode", "TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.TicketType", b =>
+                {
+                    b.HasOne("Domain.Events.Event", "Event")
+                        .WithMany("TicketTypes")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.TicketValidation", b =>
+                {
+                    b.HasOne("Domain.Tickets.Ticket", "Ticket")
+                        .WithMany("Validations")
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ticket");
+                });
+
             modelBuilder.Entity("Domain.Groups.Group", b =>
                 {
                     b.HasOne("Domain.Participants.Participant", null)
@@ -628,6 +899,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Organizers");
 
                     b.Navigation("Plugins");
+
+                    b.Navigation("TicketTypes");
                 });
 
             modelBuilder.Entity("Domain.Events.EventCategory", b =>
@@ -641,7 +914,11 @@ namespace Infrastructure.Migrations
                 {
                     b.Navigation("AttendedEvents");
 
+                    b.Navigation("Orders");
+
                     b.Navigation("OrganizedEvents");
+
+                    b.Navigation("Tickets");
                 });
 
             modelBuilder.Entity("Domain.Plugins.Plugin", b =>
@@ -652,6 +929,25 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Plugins.PluginUsage", b =>
                 {
                     b.Navigation("Data");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.Order", b =>
+                {
+                    b.Navigation("Tickets");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.Ticket", b =>
+                {
+                    b.Navigation("TicketCode");
+
+                    b.Navigation("Validations");
+                });
+
+            modelBuilder.Entity("Domain.Tickets.TicketType", b =>
+                {
+                    b.Navigation("Orders");
+
+                    b.Navigation("Tickets");
                 });
 
             modelBuilder.Entity("Domain.Groups.Group", b =>

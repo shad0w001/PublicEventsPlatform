@@ -1,9 +1,11 @@
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
 using Application.Abstractions.Media;
+using Application.Abstractions.Payments;
 using Infrastructure.Authentication;
 using Infrastructure.Database;
 using Infrastructure.Media;
+using Infrastructure.Payments;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -34,6 +36,10 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<IUserIdentityAccessor, UserIdentityAccessor>();
         services.AddScoped<IMediaStorageService, LocalMediaStorageService>();
+        services.AddScoped<ICheckoutSessionProvider, StripeCheckoutSessionProvider>();
+        services.AddScoped<IStripeWebhookVerifier, StripeWebhookVerifier>();
+        services.AddScoped<ITicketTypeRowLock, TicketTypeRowLock>();
+        services.AddScoped<ITicketRowLock, TicketRowLock>();
 
         return services;
     }

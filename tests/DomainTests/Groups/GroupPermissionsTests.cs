@@ -152,4 +152,29 @@ public class GroupPermissionsTests
         // Assert
         Assert.False(canRemove);
     }
+
+    [Theory]
+    [InlineData(GroupMemberRole.Organizer)]
+    [InlineData(GroupMemberRole.Administrator)]
+    [InlineData(GroupMemberRole.Owner)]
+    public void GroupPermissions_Should_AllowBuyTicketsAsGroup_When_RoleIsOrganizerPlus(GroupMemberRole role)
+    {
+        // Act
+        var canBuy = GroupPermissions.CanBuyTicketsAsGroup(role);
+
+        // Assert
+        Assert.True(canBuy);
+    }
+
+    [Theory]
+    [InlineData(GroupMemberRole.Member)]
+    [InlineData(GroupMemberRole.Moderator)]
+    public void GroupPermissions_Should_DenyBuyTicketsAsGroup_When_RoleIsNotOrganizerPlus(GroupMemberRole role)
+    {
+        // Act
+        var canBuy = GroupPermissions.CanBuyTicketsAsGroup(role);
+
+        // Assert
+        Assert.False(canBuy);
+    }
 }

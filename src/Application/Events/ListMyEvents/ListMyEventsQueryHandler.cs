@@ -4,7 +4,6 @@ using Application.Abstractions.Messaging;
 using Application.Events.Services;
 using Application.Users.Services;
 using Domain.Events;
-using Domain.Groups;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
 
@@ -35,14 +34,9 @@ internal sealed class ListMyEventsQueryHandler(
 
         var userId = userResult.Value.Id;
 
-        var organizerGroupIds = await context.GroupMemberships
-            .AsNoTracking()
-            .Where(m => m.UserId == userId &&
-                        (m.Role == GroupMemberRole.Organizer ||
-                         m.Role == GroupMemberRole.Administrator ||
-                         m.Role == GroupMemberRole.Owner))
-            .Select(m => m.GroupId)
-            .ToListAsync(cancellationToken);
+        var organizerGroupIds = await eventAccessService.GetOrganizerPlusGroupIdsAsync(
+            userId,
+            cancellationToken);
 
         var events = await context.Events
             .AsNoTracking()

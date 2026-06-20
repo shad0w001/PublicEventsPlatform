@@ -370,4 +370,6 @@ AGENTS.md
 .env
 .env.*
 !.env.example
+spa.env.local
 appsettings.*.local.json
+appsettings.Development.json

@@ -89,6 +89,6 @@ internal sealed class UploadEventBannerCommandHandler(
             @event.CategoryId,
             cancellationToken);
 
-        return EventMapping.ToDetailResponse(@event, editAccess, categoryName);
+        return EventMapping.ToDetailResponse(@event, editAccess, categoryName, ticketTypes: []);
     }
 }

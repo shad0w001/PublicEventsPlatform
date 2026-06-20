@@ -5,6 +5,7 @@ using Application.Events.Services;
 using Application.Groups;
 using Application.Groups.Services;
 using Application.Media;
+using Application.Payments;
 using Application.Users;
 using Application.Users.Services;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +30,9 @@ public static class DependencyInjection
 
         services.Configure<MediaOptions>(
             configuration.GetSection(MediaOptions.SectionName));
+
+        services.Configure<StripeOptions>(
+            configuration.GetSection(StripeOptions.SectionName));
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<GroupAccessService>();

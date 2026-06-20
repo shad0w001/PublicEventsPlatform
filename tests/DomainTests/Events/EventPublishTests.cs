@@ -2,6 +2,7 @@ using Domain.Events;
 using Domain.Events.EventLocations;
 using Domain.Events.Events;
 using Domain.Events.Services;
+using DomainTests.Tickets;
 
 namespace DomainTests.Events;
 
@@ -215,12 +216,33 @@ public class EventPublishTests
     }
 
     [Fact]
-    public void EventService_Should_AllowPaidAdmission_When_NoTicketTypesInPhase3()
+    public void EventService_Should_ReturnPaidPublishRequiresTicketTypes_When_PaidDraftHasNoTicketTypes()
     {
         // Arrange
         var (eventEntity, _) = EventTestData.CreateDraft();
         EventTestData.MakePublishReady(eventEntity);
         eventEntity.AdmissionType = AdmissionType.Paid;
+
+        // Act
+        var result = EventService.Publish(
+            eventEntity,
+            categoryExists: true,
+            recentPublishCount: 0,
+            maxPublishesPerWeek: MaxPublishesPerWeek);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(EventErrors.PaidPublishRequiresTicketTypes.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public void EventService_Should_PublishPaidEvent_When_TicketTypeExists()
+    {
+        // Arrange
+        var (eventEntity, _) = EventTestData.CreateDraft();
+        EventTestData.MakePublishReady(eventEntity);
+        eventEntity.AdmissionType = AdmissionType.Paid;
+        TicketTestData.CreateTicketType(eventEntity);
 
         // Act
         var result = EventService.Publish(

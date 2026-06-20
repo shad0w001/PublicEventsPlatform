@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain.Events;
+﻿using Domain.Events;
+using Domain.Tickets;
 using SharedKernel;
 
 namespace Domain.Participants
@@ -12,5 +8,7 @@ namespace Domain.Participants
     {
         public ICollection<EventOrganizer> OrganizedEvents { get; set; } = new List<EventOrganizer>();
         public ICollection<EventAttendee> AttendedEvents { get; set; } = new List<EventAttendee>();
+        public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }
