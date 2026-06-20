@@ -39,4 +39,12 @@ internal static class DomainEventPayloadDeserializer
     public static GroupSoftDeleted DeserializeGroupSoftDeleted(string payload) =>
         JsonSerializer.Deserialize<GroupSoftDeleted>(payload, SerializerOptions)
         ?? throw new InvalidOperationException("Failed to deserialize GroupSoftDeleted payload.");
+
+    public static EventPublished DeserializeEventPublished(string payload) =>
+        JsonSerializer.Deserialize<EventPublished>(payload, SerializerOptions)
+        ?? throw new InvalidOperationException("Failed to deserialize EventPublished payload.");
+
+    public static EventUpdated DeserializeEventUpdated(string payload) =>
+        JsonSerializer.Deserialize<EventUpdated>(payload, SerializerOptions)
+        ?? throw new InvalidOperationException("Failed to deserialize EventUpdated payload.");
 }

@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddHostedService<OutboxDispatcher>();
         services.AddHostedService<NotificationKafkaConsumer>();
         services.AddHostedService<CascadeKafkaConsumer>();
+        services.AddHostedService<IndexerKafkaConsumer>();
 
         return services;
     }
