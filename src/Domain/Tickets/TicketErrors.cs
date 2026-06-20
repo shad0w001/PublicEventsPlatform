@@ -99,4 +99,12 @@ public static class TicketErrors
     public static readonly Error InvalidCheckoutSession = Error.Validation(
         "Tickets.InvalidCheckoutSession",
         "Checkout session id is required");
+
+    public static Error OrderNotFound(Guid orderId) => Error.NotFound(
+        "Tickets.OrderNotFound",
+        $"The order with the Id = '{orderId}' was not found");
+
+    public static readonly Error CheckoutSessionMismatch = Error.Validation(
+        "Tickets.CheckoutSessionMismatch",
+        "Checkout session does not match this order");
 }

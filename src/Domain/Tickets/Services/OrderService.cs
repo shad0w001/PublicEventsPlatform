@@ -77,6 +77,18 @@ public static class OrderService
         return Result.Success();
     }
 
+    public static Result EnsurePaymentIntentId(Order order, string? paymentIntentId)
+    {
+        if (string.IsNullOrWhiteSpace(paymentIntentId) ||
+            !string.IsNullOrWhiteSpace(order.PaymentIntentId))
+        {
+            return Result.Success();
+        }
+
+        order.PaymentIntentId = paymentIntentId.Trim();
+        return Result.Success();
+    }
+
     public static Result ReserveInventory(TicketType ticketType, int quantity)
     {
         var remaining = TicketTypeService.GetRemainingQuantity(ticketType);

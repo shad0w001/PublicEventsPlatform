@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IUserIdentityAccessor, UserIdentityAccessor>();
         services.AddScoped<IMediaStorageService, LocalMediaStorageService>();
         services.AddScoped<ICheckoutSessionProvider, StripeCheckoutSessionProvider>();
+        services.AddScoped<IStripeWebhookVerifier, StripeWebhookVerifier>();
         services.AddScoped<ITicketTypeRowLock, TicketTypeRowLock>();
 
         return services;
