@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IGroupJoinApplicationSubmittedEmailHandler, GroupJoinApplicationSubmittedEmailHandler>();
         services.AddScoped<IGroupJoinApplicationApprovedEmailHandler, GroupJoinApplicationApprovedEmailHandler>();
         services.AddScoped<IGroupJoinApplicationRejectedEmailHandler, GroupJoinApplicationRejectedEmailHandler>();
+        services.AddScoped<IEventCancelledEmailHandler, EventCancelledEmailHandler>();
         services.AddScoped<GroupAccessService>();
         services.AddScoped<EventAccessService>();
         services.AddScoped<EventVenueConflictService>();

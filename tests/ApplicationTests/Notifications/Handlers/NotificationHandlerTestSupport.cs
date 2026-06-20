@@ -8,11 +8,15 @@ namespace ApplicationTests.Notifications.Handlers;
 
 internal sealed class FakeEmailSender : IEmailSender
 {
-    public EmailMessage? LastMessage { get; private set; }
+    private readonly List<EmailMessage> _messages = [];
+
+    public EmailMessage? LastMessage => _messages.Count > 0 ? _messages[^1] : null;
+
+    public IReadOnlyList<EmailMessage> Messages => _messages;
 
     public Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
     {
-        LastMessage = message;
+        _messages.Add(message);
         return Task.CompletedTask;
     }
 }

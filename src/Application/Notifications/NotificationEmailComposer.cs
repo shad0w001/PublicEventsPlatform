@@ -14,4 +14,20 @@ internal static class NotificationEmailComposer
 
     public static string FormatApplicantDisplayName(string? username, string email) =>
         string.IsNullOrWhiteSpace(username) ? email : username;
+
+    public static string FormatEventCancelledFreeBody(string eventTitle, string eventLink) =>
+        $"""
+            "{eventTitle}" has been cancelled.
+
+            Event: {eventLink}
+            """;
+
+    public static string FormatEventCancelledPaidBody(string eventTitle, string orderLink) =>
+        $"""
+            "{eventTitle}" has been cancelled.
+
+            A refund will be processed for your paid order. You do not need to take any action.
+
+            Order: {orderLink}
+            """;
 }

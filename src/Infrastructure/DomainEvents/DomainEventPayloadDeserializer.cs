@@ -20,6 +20,10 @@ internal static class DomainEventPayloadDeserializer
         JsonSerializer.Deserialize<EventRsvpStatusChanged>(payload, SerializerOptions)
         ?? throw new InvalidOperationException("Failed to deserialize EventRsvpStatusChanged payload.");
 
+    public static EventCancelled DeserializeEventCancelled(string payload) =>
+        JsonSerializer.Deserialize<EventCancelled>(payload, SerializerOptions)
+        ?? throw new InvalidOperationException("Failed to deserialize EventCancelled payload.");
+
     public static GroupJoinApplicationSubmitted DeserializeGroupJoinApplicationSubmitted(string payload) =>
         JsonSerializer.Deserialize<GroupJoinApplicationSubmitted>(payload, SerializerOptions)
         ?? throw new InvalidOperationException("Failed to deserialize GroupJoinApplicationSubmitted payload.");

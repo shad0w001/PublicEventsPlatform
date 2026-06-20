@@ -30,12 +30,12 @@ internal sealed class NotificationKafkaConsumer(
         };
 
         using var consumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
-        consumer.Subscribe(NotificationConsumerTopics.Phase73Topics);
+        consumer.Subscribe(NotificationConsumerTopics.NotificationTopics);
 
         logger.LogInformation(
             "Notification Kafka consumer started (group {ConsumerGroupId}, topics: {Topics})",
             kafkaOptions.ConsumerGroupId,
-            string.Join(", ", NotificationConsumerTopics.Phase73Topics));
+            string.Join(", ", NotificationConsumerTopics.NotificationTopics));
 
         var consumeTimeout = TimeSpan.FromSeconds(1);
 
@@ -140,6 +140,11 @@ internal sealed class NotificationKafkaConsumer(
                     .GetRequiredService<IEventRsvpStatusChangedEmailHandler>()
                     .HandleAsync(DomainEventPayloadDeserializer.DeserializeEventRsvpStatusChanged(payload), cancellationToken);
                 break;
+            case NotificationConsumerTopics.EventCancelled:
+                await serviceProvider
+                    .GetRequiredService<IEventCancelledEmailHandler>()
+                    .HandleAsync(DomainEventPayloadDeserializer.DeserializeEventCancelled(payload), cancellationToken);
+                break;
             case NotificationConsumerTopics.GroupJoinApplicationSubmitted:
                 await serviceProvider
                     .GetRequiredService<IGroupJoinApplicationSubmittedEmailHandler>()
@@ -164,6 +169,7 @@ internal sealed class NotificationKafkaConsumer(
     {
         NotificationConsumerTopics.TicketPurchaseCompleted => NotificationConsumerNames.TicketPurchaseCompleted,
         NotificationConsumerTopics.EventRsvpStatusChanged => NotificationConsumerNames.EventRsvpStatusChanged,
+        NotificationConsumerTopics.EventCancelled => NotificationConsumerNames.EventCancelled,
         NotificationConsumerTopics.GroupJoinApplicationSubmitted => NotificationConsumerNames.GroupJoinApplicationSubmitted,
         NotificationConsumerTopics.GroupJoinApplicationApproved => NotificationConsumerNames.GroupJoinApplicationApproved,
         NotificationConsumerTopics.GroupJoinApplicationRejected => NotificationConsumerNames.GroupJoinApplicationRejected,
