@@ -1,4 +1,5 @@
 using Domain.Events;
+using Domain.Events.Services;
 using Domain.Tickets;
 using Domain.Tickets.Events;
 using Domain.Tickets.Services;
@@ -121,5 +122,58 @@ public class OrderServiceTests
         // Assert
         Assert.True(result.IsFailure);
         Assert.Equal(TicketErrors.PaidAdmissionRequired.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public void OrderService_Should_AttachCheckoutSession_When_OrderIsPending()
+    {
+        // Arrange
+        var @event = TicketTestData.MakePaidPublished();
+        var (order, _) = TicketTestData.CreatePendingOrder(@event, quantity: 1);
+
+        // Act
+        var result = OrderService.AttachCheckoutSession(order, "cs_test_123", "pi_test_456");
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal("cs_test_123", order.CheckoutSessionId);
+        Assert.Equal("pi_test_456", order.PaymentIntentId);
+    }
+
+    [Fact]
+    public void OrderService_Should_ReturnOrderNotPending_When_AttachingCheckoutSessionToPaidOrder()
+    {
+        // Arrange
+        var @event = TicketTestData.MakePaidPublished();
+        var (order, ticketType) = TicketTestData.CreatePendingOrder(@event, quantity: 1);
+        OrderService.MarkPaid(order, ticketType, quantity: 1);
+
+        // Act
+        var result = OrderService.AttachCheckoutSession(order, "cs_test_123", null);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(TicketErrors.OrderNotPending.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public void OrderService_Should_ReturnEventCancelled_When_EventIsCancelled()
+    {
+        // Arrange
+        var @event = TicketTestData.MakePaidPublished();
+        EventService.Cancel(@event);
+        var ticketType = TicketTestData.CreateTicketType(@event);
+
+        // Act
+        var result = OrderService.CreatePending(
+            @event,
+            ticketType,
+            TicketTestData.BuyerParticipantId,
+            quantity: 1,
+            TicketTestData.DefaultExpiresAt);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(TicketErrors.EventCancelled.Code, result.Error.Code);
     }
 }

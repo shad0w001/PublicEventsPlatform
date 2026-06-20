@@ -95,4 +95,8 @@ public static class TicketErrors
     public static readonly Error InsufficientPurchasePermissions = Error.Forbidden(
         "Tickets.InsufficientPurchasePermissions",
         "You are not authorized to buy tickets on behalf of this organization");
+
+    public static readonly Error InvalidCheckoutSession = Error.Validation(
+        "Tickets.InvalidCheckoutSession",
+        "Checkout session id is required");
 }

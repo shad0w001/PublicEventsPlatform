@@ -13,6 +13,11 @@ public static class OrderService
         int quantity,
         DateTime expiresAt)
     {
+        if (@event.Status == EventStatus.Cancelled)
+        {
+            return Result.Failure<Order>(TicketErrors.EventCancelled);
+        }
+
         if (@event.Status != EventStatus.Published)
         {
             return Result.Failure<Order>(TicketErrors.EventNotPublished);
@@ -47,6 +52,29 @@ public static class OrderService
         };
 
         return order;
+    }
+
+    public static Result AttachCheckoutSession(
+        Order order,
+        string checkoutSessionId,
+        string? paymentIntentId)
+    {
+        if (order.Status != OrderStatus.Pending)
+        {
+            return Result.Failure(TicketErrors.OrderNotPending);
+        }
+
+        if (string.IsNullOrWhiteSpace(checkoutSessionId))
+        {
+            return Result.Failure(TicketErrors.InvalidCheckoutSession);
+        }
+
+        order.CheckoutSessionId = checkoutSessionId.Trim();
+        order.PaymentIntentId = string.IsNullOrWhiteSpace(paymentIntentId)
+            ? null
+            : paymentIntentId.Trim();
+
+        return Result.Success();
     }
 
     public static Result ReserveInventory(TicketType ticketType, int quantity)
