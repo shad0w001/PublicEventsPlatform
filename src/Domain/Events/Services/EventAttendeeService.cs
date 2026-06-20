@@ -42,6 +42,30 @@ public static class EventAttendeeService
         return attendee;
     }
 
+    public static Result<EventAttendee> UpsertPaidAttendance(
+        Event @event,
+        Guid participantId,
+        int ticketCountDelta)
+    {
+        if (ticketCountDelta <= 0)
+        {
+            return Result.Failure<EventAttendee>(EventAttendeeErrors.InvalidTicketCountDelta);
+        }
+
+        if (@event.AdmissionType != AdmissionType.Paid)
+        {
+            return Result.Failure<EventAttendee>(EventAttendeeErrors.FreeAdmissionNotAllowed);
+        }
+
+        var existing = @event.Attendees.FirstOrDefault(a => a.ParticipantId == participantId);
+        var attendee = FindOrCreateAttendee(@event, participantId, existing);
+        attendee.TicketCount = (attendee.TicketCount ?? 0) + ticketCountDelta;
+        attendee.Status = null;
+        attendee.RegisteredAt = null;
+
+        return attendee;
+    }
+
     public static Result<EventAttendee?> EnsureHostGoing(Event @event, DateTime utcNow)
     {
         if (@event.AdmissionType != AdmissionType.Free)

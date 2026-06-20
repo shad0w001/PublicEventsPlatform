@@ -127,4 +127,16 @@ public static class EventErrors
     public static readonly Error VenueConflict = Error.Conflict(
         "Events.VenueConflict",
         "Another published event already uses this physical venue at an overlapping time");
+
+    public static readonly Error AdmissionTypeImmutable = Error.Conflict(
+        "Events.AdmissionTypeImmutable",
+        "Admission type cannot be changed after the event is published");
+
+    public static readonly Error CannotSwitchToPaidWithRsvps = Error.Conflict(
+        "Events.CannotSwitchToPaidWithRsvps",
+        "Remove all RSVP rows before switching a draft event to paid admission");
+
+    public static readonly Error CannotSwitchToFreeWithTicketSales = Error.Conflict(
+        "Events.CannotSwitchToFreeWithTicketSales",
+        "Ticket types with sales cannot remain when switching a draft event to free admission");
 }

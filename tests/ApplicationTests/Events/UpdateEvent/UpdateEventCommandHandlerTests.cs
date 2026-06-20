@@ -12,6 +12,7 @@ using Domain.Groups;
 using Domain.Groups.Services;
 using Domain.Plugins;
 using Domain.Plugins.Services;
+using Domain.Tickets.Services;
 using Domain.Users;
 using Domain.Users.Services;
 using Infrastructure.Database;
@@ -779,6 +780,145 @@ public class UpdateEventCommandHandlerTests
         // Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Users.EmailNotVerified", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_ReturnCannotSwitchToPaidWithRsvps_When_DraftHasAttendees()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|admission-free-rsvp", "free-rsvp@example.com");
+        var eventId = await SeedDraftEventWithFreeAdmissionAndAttendeeAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var command = new UpdateEventCommand(eventId, AdmissionType: AdmissionType.Paid);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(EventErrors.CannotSwitchToPaidWithRsvps.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_RemoveTicketTypes_When_DraftPaidSwitchesToFree()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|admission-paid-free", "paid-free@example.com");
+        var eventId = await SeedDraftEventWithPaidAdmissionAndTicketTypeAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var command = new UpdateEventCommand(eventId, AdmissionType: AdmissionType.Free);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(AdmissionType.Free, result.Value.AdmissionType);
+
+        await using var verifyContext = CreateContext(databaseName);
+        Assert.False(await verifyContext.TicketTypes.AnyAsync(t => t.EventId == eventId));
+    }
+
+    [Fact]
+    public async Task UpdateEventCommandHandler_Should_ReturnCannotSwitchToFreeWithTicketSales_When_SoldQuantityPositive()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|admission-sales-block", "sales-block@example.com");
+        var eventId = await SeedDraftEventWithPaidAdmissionAndSoldTicketTypeAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        var command = new UpdateEventCommand(eventId, AdmissionType: AdmissionType.Free);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(EventErrors.CannotSwitchToFreeWithTicketSales.Code, result.Error.Code);
+    }
+
+    private static async Task<Guid> SeedDraftEventWithFreeAdmissionAndAttendeeAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, "Free With RSVP", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+        var categoryId = SeedCategoryInContext(context);
+
+        MakePublishReadyViaUpdate(@event, categoryId, user.Id);
+
+        var attendee = EventAttendee.Create(@event.Id, Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"));
+        attendee.Status = EventAttendeeStatus.Going;
+        attendee.RegisteredAt = DateTime.UtcNow;
+        @event.Attendees.Add(attendee);
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
+    private static async Task<Guid> SeedDraftEventWithPaidAdmissionAndTicketTypeAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, "Paid Draft", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+        @event.AdmissionType = AdmissionType.Paid;
+        TicketTypeService.Create(@event, "General", "Entry", priceCents: 2500, capacity: 100);
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
+    private static async Task<Guid> SeedDraftEventWithPaidAdmissionAndSoldTicketTypeAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, "Paid With Sales", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+        @event.AdmissionType = AdmissionType.Paid;
+        var ticketType = TicketTypeService.Create(@event, "General", "Entry", priceCents: 2500, capacity: 100).Value;
+        ticketType.SoldQuantity = 1;
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
     }
 
     private static async Task<Guid> SeedBigDraftEventWithPluginAsync(

@@ -42,12 +42,16 @@ internal sealed class UpdateEventCommandHandler(
 
         var user = userResult.Value;
 
-        var eventResult = command.Tier is not null
-            ? await eventAccessService.GetActiveEventWithPluginsAsync(
+        var eventResult = command.AdmissionType is not null
+            ? await eventAccessService.GetActiveEventForAdmissionTypeUpdateAsync(
                 command.EventId,
-                includePluginData: false,
                 cancellationToken)
-            : await eventAccessService.GetActiveEventAsync(command.EventId, cancellationToken);
+            : command.Tier is not null
+                ? await eventAccessService.GetActiveEventWithPluginsAsync(
+                    command.EventId,
+                    includePluginData: false,
+                    cancellationToken)
+                : await eventAccessService.GetActiveEventAsync(command.EventId, cancellationToken);
 
         if (eventResult.IsFailure)
         {

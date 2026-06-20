@@ -1,5 +1,6 @@
 using Domain.Events.EventLocations;
 using Domain.Events.Events;
+using Domain.Tickets;
 using SharedKernel;
 
 namespace Domain.Events.Services;
@@ -124,6 +125,16 @@ public static class EventService
 
         if (patch.AdmissionType is not null)
         {
+            var admissionResult = ApplyAdmissionTypeChange(
+                @event,
+                patch.AdmissionType.Value,
+                @event.TicketTypes);
+
+            if (admissionResult.IsFailure)
+            {
+                return admissionResult;
+            }
+
             @event.AdmissionType = patch.AdmissionType;
         }
 
@@ -163,6 +174,42 @@ public static class EventService
         }
 
         @event.Raise(new EventUpdated(@event.Id));
+        return Result.Success();
+    }
+
+    internal static Result ApplyAdmissionTypeChange(
+        Event @event,
+        AdmissionType newAdmissionType,
+        IReadOnlyList<TicketType> ticketTypes)
+    {
+        if (@event.AdmissionType == newAdmissionType)
+        {
+            return Result.Success();
+        }
+
+        if (@event.Status == EventStatus.Published)
+        {
+            return Result.Failure(EventErrors.AdmissionTypeImmutable);
+        }
+
+        if (@event.AdmissionType == AdmissionType.Free &&
+            newAdmissionType == AdmissionType.Paid &&
+            @event.Attendees.Count > 0)
+        {
+            return Result.Failure(EventErrors.CannotSwitchToPaidWithRsvps);
+        }
+
+        if (@event.AdmissionType == AdmissionType.Paid &&
+            newAdmissionType == AdmissionType.Free)
+        {
+            if (ticketTypes.Any(t => t.SoldQuantity > 0))
+            {
+                return Result.Failure(EventErrors.CannotSwitchToFreeWithTicketSales);
+            }
+
+            @event.TicketTypes.Clear();
+        }
+
         return Result.Success();
     }
 

@@ -1,6 +1,8 @@
 using Domain.Events;
 using Domain.Events.EventLocations;
 using Domain.Events.Services;
+using Domain.Users;
+using Domain.Users.Services;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
@@ -59,6 +61,70 @@ public class EventModelTests
         // Assert
         Assert.NotNull(entityType);
         Assert.Null(shadowProperty);
+    }
+
+    [Fact]
+    public void EventAttendeeModel_Should_ExposeTicketCountAndNullableStatus_When_ApplicationDbContextModelIsBuilt()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act
+        var entityType = context.Model.FindEntityType(typeof(EventAttendee));
+
+        // Assert
+        Assert.NotNull(entityType);
+        Assert.NotNull(entityType.FindProperty(nameof(EventAttendee.TicketCount)));
+        Assert.Null(entityType.FindProperty("CheckedInAt"));
+
+        var statusProperty = entityType.FindProperty(nameof(EventAttendee.Status));
+        Assert.NotNull(statusProperty);
+        Assert.True(statusProperty.IsNullable);
+    }
+
+    [Fact]
+    public async Task EventAttendee_Should_PersistPaidAttendanceRow_When_TicketCountSetWithoutStatus()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+
+        await using (var context = CreateContext(databaseName))
+        {
+            var buyer = UserService.ProvisionFromExternalIdentity(
+                "auth0|paid-attendee",
+                "paid-attendee@example.com",
+                emailVerified: true,
+                profilePictureUrl: null,
+                "/images/default-avatar.png",
+                ServiceRole.User);
+            context.Users.Add(buyer);
+
+            var createResult = EventService.Create(EventTier.Small, "Paid Attendance", buyer.Id);
+            var @event = createResult.Value.Event;
+
+            EventService.Update(
+                @event,
+                new EventUpdatePatch { AdmissionType = AdmissionType.Paid },
+                buyer.Id);
+
+            EventAttendeeService.UpsertPaidAttendance(@event, buyer.Id, ticketCountDelta: 2);
+
+            context.Events.Add(@event);
+            context.EventOrganizers.Add(createResult.Value.Organizer);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        EventAttendee loadedAttendee;
+        await using (var context = CreateContext(databaseName))
+        {
+            loadedAttendee = await context.EventAttendees.SingleAsync();
+        }
+
+        // Assert
+        Assert.Equal(2, loadedAttendee.TicketCount);
+        Assert.Null(loadedAttendee.Status);
+        Assert.Null(loadedAttendee.RegisteredAt);
     }
 
     [Fact]

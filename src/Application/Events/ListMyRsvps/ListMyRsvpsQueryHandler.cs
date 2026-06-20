@@ -117,7 +117,7 @@ internal sealed class ListMyRsvpsQueryHandler(
                         selfDisplayName,
                         groupIdSet,
                         groupNames),
-                    row.Attendee.Status,
+                    row.Attendee.Status!.Value,
                     row.Attendee.RegisteredAt);
             })
             .OrderBy(i => i.StartTime)

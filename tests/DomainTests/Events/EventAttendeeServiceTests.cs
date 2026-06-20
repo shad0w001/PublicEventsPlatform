@@ -345,4 +345,99 @@ public class EventAttendeeServiceTests
         Assert.Equal(1, interested);
         Assert.Equal(3, responseCount);
     }
+
+    [Fact]
+    public void CountRsvps_Should_ExcludePaidAttendanceRows_When_StatusIsNull()
+    {
+        // Arrange
+        var attendees = new List<EventAttendee>
+        {
+            new() { Status = EventAttendeeStatus.Going },
+            new() { Status = null, TicketCount = 3 }
+        };
+
+        // Act
+        var (going, interested, responseCount) = EventAttendeeService.CountRsvps(attendees);
+
+        // Assert
+        Assert.Equal(1, going);
+        Assert.Equal(0, interested);
+        Assert.Equal(1, responseCount);
+    }
+
+    [Fact]
+    public void UpsertPaidAttendance_Should_CreateRowWithTicketCount_When_NewPaidAttendance()
+    {
+        // Arrange
+        var eventEntity = EventTestData.MakePublished();
+        eventEntity.AdmissionType = AdmissionType.Paid;
+
+        // Act
+        var result = EventAttendeeService.UpsertPaidAttendance(
+            eventEntity,
+            AttendeeParticipantId,
+            ticketCountDelta: 2);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(eventEntity.Attendees);
+        Assert.Equal(2, result.Value.TicketCount);
+        Assert.Null(result.Value.Status);
+        Assert.Null(result.Value.RegisteredAt);
+    }
+
+    [Fact]
+    public void UpsertPaidAttendance_Should_IncrementTicketCount_When_RowAlreadyExists()
+    {
+        // Arrange
+        var eventEntity = EventTestData.MakePublished();
+        eventEntity.AdmissionType = AdmissionType.Paid;
+        EventAttendeeService.UpsertPaidAttendance(eventEntity, AttendeeParticipantId, ticketCountDelta: 2);
+
+        // Act
+        var result = EventAttendeeService.UpsertPaidAttendance(
+            eventEntity,
+            AttendeeParticipantId,
+            ticketCountDelta: 3);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(eventEntity.Attendees);
+        Assert.Equal(5, result.Value.TicketCount);
+    }
+
+    [Fact]
+    public void UpsertPaidAttendance_Should_ReturnFreeAdmissionNotAllowed_When_EventIsFree()
+    {
+        // Arrange
+        var eventEntity = EventTestData.MakePublished();
+
+        // Act
+        var result = EventAttendeeService.UpsertPaidAttendance(
+            eventEntity,
+            AttendeeParticipantId,
+            ticketCountDelta: 1);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(EventAttendeeErrors.FreeAdmissionNotAllowed.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public void UpsertPaidAttendance_Should_ReturnInvalidTicketCountDelta_When_DeltaIsZero()
+    {
+        // Arrange
+        var eventEntity = EventTestData.MakePublished();
+        eventEntity.AdmissionType = AdmissionType.Paid;
+
+        // Act
+        var result = EventAttendeeService.UpsertPaidAttendance(
+            eventEntity,
+            AttendeeParticipantId,
+            ticketCountDelta: 0);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(EventAttendeeErrors.InvalidTicketCountDelta.Code, result.Error.Code);
+    }
 }

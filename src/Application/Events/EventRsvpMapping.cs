@@ -21,11 +21,12 @@ internal static class EventRsvpMapping
         if (userId is not null)
         {
             myStatuses = @event.Attendees
+                .Where(a => a.Status is not null)
                 .Where(a => a.ParticipantId == userId.Value || organizerPlusGroupIds.Contains(a.ParticipantId))
                 .Select(a => new EventRsvpMyStatusResponse(
                     a.ParticipantId,
                     organizerPlusGroupIds.Contains(a.ParticipantId),
-                    a.Status))
+                    a.Status!.Value))
                 .ToList();
         }
 

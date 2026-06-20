@@ -24,7 +24,8 @@ public class EventAttendeeConfiguration : IEntityTypeConfiguration<EventAttendee
 
         builder.Property(ea => ea.Status)
             .HasConversion<string>()
-            .HasMaxLength(50)
-            .IsRequired();
+            .HasMaxLength(50);
+
+        builder.Property(ea => ea.TicketCount);
     }
 }

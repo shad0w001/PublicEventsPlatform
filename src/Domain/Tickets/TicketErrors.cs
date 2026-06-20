@@ -87,4 +87,8 @@ public static class TicketErrors
     public static readonly Error TicketEventMismatch = Error.Validation(
         "Tickets.TicketEventMismatch",
         "The ticket does not belong to this event");
+
+    public static readonly Error InsufficientPurchasePermissions = Error.Forbidden(
+        "Tickets.InsufficientPurchasePermissions",
+        "You are not authorized to buy tickets on behalf of this organization");
 }

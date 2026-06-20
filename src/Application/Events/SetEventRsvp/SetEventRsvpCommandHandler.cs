@@ -77,7 +77,7 @@ internal sealed class SetEventRsvpCommandHandler(
             @event.Id,
             attendee.ParticipantId,
             participant.ParticipantIsGroup,
-            attendee.Status,
+            attendee.Status!.Value,
             attendee.RegisteredAt);
     }
 }

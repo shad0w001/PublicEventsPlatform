@@ -4,6 +4,7 @@ using Domain.Events.EventLocations;
 using Domain.Events.Services;
 using Domain.Groups;
 using Domain.Groups.Services;
+using Domain.Tickets;
 using Domain.Users;
 using Domain.Users.Services;
 using Infrastructure.Database;
@@ -193,6 +194,83 @@ public class EventAccessServiceResolveAttendeeTests
         Assert.Single(result.Value.Organizers);
         Assert.Single(result.Value.Attendees);
         Assert.Equal(attendeeId, result.Value.Attendees[0].ParticipantId);
+    }
+
+    [Fact]
+    public async Task ResolveTicketPurchaseParticipantAsync_Should_ReturnSelf_When_ParticipantIdIsNull()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var user = CreateUser("auth0|purchase-self-null", "purchase-self-null@example.com");
+        await SeedUserAsync(databaseName, user);
+        var service = CreateService(databaseName);
+
+        // Act
+        var result = await service.ResolveTicketPurchaseParticipantAsync(null, user.Id, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(user.Id, result.Value.ParticipantId);
+        Assert.False(result.Value.ParticipantIsGroup);
+    }
+
+    [Theory]
+    [InlineData(GroupMemberRole.Organizer)]
+    [InlineData(GroupMemberRole.Administrator)]
+    [InlineData(GroupMemberRole.Owner)]
+    public async Task ResolveTicketPurchaseParticipantAsync_Should_ReturnGroup_When_CallerHasBuyPermission(
+        GroupMemberRole role)
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var owner = CreateUser("auth0|purchase-group-owner", "purchase-group-owner@example.com");
+        var actor = CreateUser($"auth0|purchase-group-{role}", $"purchase-{role}@example.com");
+        var group = SeedGroupWithMember(databaseName, owner, actor, role);
+        var service = CreateService(databaseName);
+
+        // Act
+        var result = await service.ResolveTicketPurchaseParticipantAsync(group.Id, actor.Id, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(group.Id, result.Value.ParticipantId);
+        Assert.True(result.Value.ParticipantIsGroup);
+    }
+
+    [Fact]
+    public async Task ResolveTicketPurchaseParticipantAsync_Should_ReturnInsufficientPurchasePermissions_When_CallerIsModerator()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var owner = CreateUser("auth0|purchase-mod-owner", "purchase-mod-owner@example.com");
+        var moderator = CreateUser("auth0|purchase-mod", "purchase-mod@example.com");
+        var group = SeedGroupWithMember(databaseName, owner, moderator, GroupMemberRole.Moderator);
+        var service = CreateService(databaseName);
+
+        // Act
+        var result = await service.ResolveTicketPurchaseParticipantAsync(group.Id, moderator.Id, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(TicketErrors.InsufficientPurchasePermissions.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public async Task ResolveTicketPurchaseParticipantAsync_Should_ReturnInsufficientPurchasePermissions_When_CallerIsGroupMember()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var owner = CreateUser("auth0|purchase-member-owner", "purchase-member-owner@example.com");
+        var member = CreateUser("auth0|purchase-member", "purchase-member@example.com");
+        var group = SeedGroupWithMember(databaseName, owner, member, GroupMemberRole.Member);
+        var service = CreateService(databaseName);
+
+        // Act
+        var result = await service.ResolveTicketPurchaseParticipantAsync(group.Id, member.Id, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(TicketErrors.InsufficientPurchasePermissions.Code, result.Error.Code);
     }
 
     private static async Task<(Guid EventId, Guid AttendeeId)> SeedPublishedEventWithAttendeeAsync(string databaseName, User user)

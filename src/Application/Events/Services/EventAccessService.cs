@@ -1,6 +1,8 @@
 using Application.Abstractions.Data;
+using Application.Events.Services;
 using Domain.Events;
 using Domain.Groups;
+using Domain.Tickets;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
 
@@ -23,14 +25,46 @@ internal sealed class EventAccessService(IApplicationDbContext context)
         Guid? hostId,
         Guid userId,
         CancellationToken cancellationToken) =>
-        ResolveActingParticipantAsync(hostId, userId, cancellationToken);
+        ResolveActingParticipantAsync(
+            hostId,
+            userId,
+            GroupPermissions.CanCreateEventsAsGroup,
+            EventErrors.InsufficientHostPermissions,
+            cancellationToken);
 
     public async Task<Result<EventAttendeeParticipantContext>> ResolveAttendeeParticipantAsync(
         Guid? participantId,
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var result = await ResolveActingParticipantAsync(participantId, userId, cancellationToken);
+        var result = await ResolveActingParticipantAsync(
+            participantId,
+            userId,
+            GroupPermissions.CanCreateEventsAsGroup,
+            EventErrors.InsufficientHostPermissions,
+            cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return Result.Failure<EventAttendeeParticipantContext>(result.Error);
+        }
+
+        var host = result.Value;
+        return new EventAttendeeParticipantContext(host.HostParticipantId, host.HostIsGroup);
+    }
+
+    public async Task<Result<EventAttendeeParticipantContext>> ResolveTicketPurchaseParticipantAsync(
+        Guid? participantId,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var result = await ResolveActingParticipantAsync(
+            participantId,
+            userId,
+            GroupPermissions.CanBuyTicketsAsGroup,
+            TicketErrors.InsufficientPurchasePermissions,
+            cancellationToken);
+
         if (result.IsFailure)
         {
             return Result.Failure<EventAttendeeParticipantContext>(result.Error);
@@ -45,6 +79,30 @@ internal sealed class EventAccessService(IApplicationDbContext context)
         var @event = await context.Events
             .Include(e => e.Organizers)
             .Include(e => e.Locations)
+            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+
+        if (@event is null)
+        {
+            return Result.Failure<Event>(EventErrors.NotFound(eventId));
+        }
+
+        if (@event.IsDeleted)
+        {
+            return Result.Failure<Event>(EventErrors.Deleted(eventId));
+        }
+
+        return @event;
+    }
+
+    public async Task<Result<Event>> GetActiveEventForAdmissionTypeUpdateAsync(
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var @event = await context.Events
+            .Include(e => e.Organizers)
+            .Include(e => e.Locations)
+            .Include(e => e.Attendees)
+            .Include(e => e.TicketTypes)
             .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
 
         if (@event is null)
@@ -204,6 +262,8 @@ internal sealed class EventAccessService(IApplicationDbContext context)
     private async Task<Result<EventHostContext>> ResolveActingParticipantAsync(
         Guid? participantId,
         Guid userId,
+        Func<GroupMemberRole, bool> groupPermissionCheck,
+        Error insufficientPermissionsError,
         CancellationToken cancellationToken)
     {
         var resolvedParticipantId = participantId ?? userId;
@@ -232,9 +292,9 @@ internal sealed class EventAccessService(IApplicationDbContext context)
                 .Select(m => (GroupMemberRole?)m.Role)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (role is null || !GroupPermissions.CanCreateEventsAsGroup(role.Value))
+            if (role is null || !groupPermissionCheck(role.Value))
             {
-                return Result.Failure<EventHostContext>(EventErrors.InsufficientHostPermissions);
+                return Result.Failure<EventHostContext>(insufficientPermissionsError);
             }
 
             return new EventHostContext(resolvedParticipantId, HostIsGroup: true);
@@ -246,7 +306,7 @@ internal sealed class EventAccessService(IApplicationDbContext context)
 
         if (isOtherUser)
         {
-            return Result.Failure<EventHostContext>(EventErrors.InsufficientHostPermissions);
+            return Result.Failure<EventHostContext>(insufficientPermissionsError);
         }
 
         return Result.Failure<EventHostContext>(EventErrors.HostNotFound(resolvedParticipantId));

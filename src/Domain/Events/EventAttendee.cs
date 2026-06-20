@@ -11,8 +11,8 @@ public class EventAttendee
     public Participant Participant { get; set; } = null!;
 
     public DateTime? RegisteredAt { get; set; }
-    public DateTime? CheckedInAt { get; set; }
-    public EventAttendeeStatus Status { get; set; }
+    public EventAttendeeStatus? Status { get; set; }
+    public int? TicketCount { get; set; }
 
     public static EventAttendee Create(Guid eventId, Guid participantId) =>
         new()
