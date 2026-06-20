@@ -24,6 +24,11 @@ public static class TicketTypeService
             return Result.Failure<TicketType>(descriptionResult.Error);
         }
 
+        if (@event.AdmissionType != AdmissionType.Paid)
+        {
+            return Result.Failure<TicketType>(TicketErrors.PaidAdmissionRequired);
+        }
+
         if (priceCents <= 0)
         {
             return Result.Failure<TicketType>(TicketErrors.PriceMustBePositive);
@@ -54,6 +59,7 @@ public static class TicketTypeService
         TicketType ticketType,
         string? name,
         string? description,
+        int? priceCents,
         int? capacity)
     {
         if (name is not null)
@@ -76,6 +82,21 @@ public static class TicketTypeService
             }
 
             ticketType.Description = description.Trim();
+        }
+
+        if (priceCents is not null)
+        {
+            if (ticketType.SoldQuantity > 0)
+            {
+                return Result.Failure(TicketErrors.PriceImmutableAfterSales);
+            }
+
+            if (priceCents.Value <= 0)
+            {
+                return Result.Failure(TicketErrors.PriceMustBePositive);
+            }
+
+            ticketType.PriceCents = priceCents.Value;
         }
 
         if (capacity is not null)

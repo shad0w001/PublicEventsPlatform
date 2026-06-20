@@ -127,7 +127,7 @@ internal sealed class UpdateEventCommandHandler(
             @event.CategoryId,
             cancellationToken);
 
-        return EventMapping.ToDetailResponse(@event, editAccess, categoryName);
+        return EventMapping.ToDetailResponse(@event, editAccess, categoryName, ticketTypes: []);
     }
 
     private static bool ShouldCheckVenueConflict(Event @event, UpdateEventCommand command) =>

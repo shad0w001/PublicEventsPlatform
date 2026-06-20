@@ -37,7 +37,9 @@ internal sealed class PublishEventCommandHandler(
 
         var user = userResult.Value;
 
-        var eventResult = await eventAccessService.GetActiveEventAsync(command.EventId, cancellationToken);
+        var eventResult = await eventAccessService.GetActiveEventWithTicketTypesAsync(
+            command.EventId,
+            cancellationToken);
         if (eventResult.IsFailure)
         {
             return Result.Failure<EventDetailResponse>(eventResult.Error);
@@ -93,6 +95,6 @@ internal sealed class PublishEventCommandHandler(
             @event.CategoryId,
             cancellationToken);
 
-        return EventMapping.ToDetailResponse(@event, editAccess, categoryName);
+        return EventMapping.ToDetailResponse(@event, editAccess, categoryName, ticketTypes: []);
     }
 }

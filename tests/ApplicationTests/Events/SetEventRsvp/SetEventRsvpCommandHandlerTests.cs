@@ -8,6 +8,7 @@ using Domain.Events.EventLocations;
 using Domain.Events.Services;
 using Domain.Groups;
 using Domain.Groups.Services;
+using Domain.Tickets.Services;
 using Domain.Users;
 using Domain.Users.Services;
 using Infrastructure.Database;
@@ -270,6 +271,12 @@ public class SetEventRsvpCommandHandlerTests
 
         var categoryId = SeedCategoryInContext(context);
         MakePublishReady(@event, categoryId, user.Id, admissionType);
+
+        if (admissionType == AdmissionType.Paid)
+        {
+            TicketTypeService.Create(@event, "General Admission", "Standard entry", 2500, 100);
+        }
+
         EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 6);
 
         if (cancel)

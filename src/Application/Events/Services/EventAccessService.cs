@@ -168,6 +168,29 @@ internal sealed class EventAccessService(IApplicationDbContext context)
         return @event;
     }
 
+    public async Task<Result<Event>> GetActiveEventWithTicketTypesAsync(
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var @event = await context.Events
+            .Include(e => e.Organizers)
+            .Include(e => e.Locations)
+            .Include(e => e.TicketTypes)
+            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+
+        if (@event is null)
+        {
+            return Result.Failure<Event>(EventErrors.NotFound(eventId));
+        }
+
+        if (@event.IsDeleted)
+        {
+            return Result.Failure<Event>(EventErrors.Deleted(eventId));
+        }
+
+        return @event;
+    }
+
     public async Task<Result<Event>> GetActiveEventForDisplayAsync(
         Guid eventId,
         CancellationToken cancellationToken)
@@ -176,6 +199,7 @@ internal sealed class EventAccessService(IApplicationDbContext context)
             .Include(e => e.Organizers)
             .Include(e => e.Locations)
             .Include(e => e.Attendees)
+            .Include(e => e.TicketTypes)
             .Include(e => e.Plugins).ThenInclude(u => u.Data)
             .Include(e => e.Plugins).ThenInclude(u => u.Plugin)
             .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);

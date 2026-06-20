@@ -56,6 +56,10 @@ public static class TicketErrors
         "Tickets.PaidAdmissionRequired",
         "Tickets are only available on paid-admission events");
 
+    public static Error TicketTypeNotFound(Guid ticketTypeId) => Error.NotFound(
+        "Tickets.TicketTypeNotFound",
+        $"The ticket type with the Id = '{ticketTypeId}' was not found");
+
     public static readonly Error TicketTypeEventMismatch = Error.Validation(
         "Tickets.TicketTypeEventMismatch",
         "Ticket type does not belong to this event");

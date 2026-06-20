@@ -12,6 +12,7 @@ using Domain.Groups;
 using Domain.Groups.Services;
 using Domain.Plugins;
 using Domain.Plugins.Services;
+using Domain.Tickets.Services;
 using Domain.Users;
 using Domain.Users.Services;
 using Infrastructure.Database;
@@ -48,6 +49,72 @@ public class GetEventQueryHandlerTests
         Assert.Equal("eventhost", result.Value.Public.HostDisplayName);
         Assert.False(result.Value.Public.HostIsGroup);
         Assert.Equal("Music", result.Value.Public.CategoryName);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_EmbedTicketTypes_When_PaidPublishedEvent()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|pub-ticket-types", "ticket-types@example.com");
+        var eventId = await SeedPublishedPaidEventAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Equal(AdmissionType.Paid, result.Value.Public!.AdmissionType);
+        Assert.Single(result.Value.Public.TicketTypes);
+        Assert.Equal("General Admission", result.Value.Public.TicketTypes[0].Name);
+        Assert.Equal(2500, result.Value.Public.TicketTypes[0].PriceCents);
+        Assert.Null(result.Value.Public.RsvpSummary);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_ReturnEmptyTicketTypes_When_FreePublishedEvent()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|free-no-tickets", "free-no-tickets@example.com");
+        var eventId = await SeedPublishedEventAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.Public);
+        Assert.Equal(AdmissionType.Free, result.Value.Public!.AdmissionType);
+        Assert.Empty(result.Value.Public.TicketTypes);
+    }
+
+    [Fact]
+    public async Task GetEventQueryHandler_Should_EmbedTicketTypesOnEditDetail_When_EditorGetsPaidDraft()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|draft-ticket-types", "draft-tickets@example.com");
+        var eventId = await SeedPaidDraftWithTicketTypeAsync(databaseName, identity);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new GetEventQuery(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value.Public);
+        Assert.NotNull(result.Value.EditDetail);
+        Assert.True(result.Value.CanEdit);
+        Assert.Single(result.Value.EditDetail!.TicketTypes);
+        Assert.Equal("General Admission", result.Value.EditDetail.TicketTypes[0].Name);
+        Assert.Null(result.Value.EditDetail.RsvpSummary);
     }
 
     [Fact]
@@ -915,6 +982,57 @@ public class GetEventQueryHandlerTests
         return @event.Id;
     }
 
+    private static async Task<Guid> SeedPublishedPaidEventAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, "Published Paid", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var categoryId = SeedCategoryInContext(context);
+        MakePublishReadyViaUpdate(@event, categoryId, user.Id, admissionType: AdmissionType.Paid);
+        TicketTypeService.Create(@event, "General Admission", "Standard entry", 2500, 100);
+        EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 100);
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
+    private static async Task<Guid> SeedPaidDraftWithTicketTypeAsync(
+        string databaseName,
+        FakeUserIdentityAccessor identity)
+    {
+        await using var context = CreateContext(databaseName);
+        var currentUserService = new CurrentUserService(
+            context,
+            identity,
+            Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
+        var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
+
+        var createResult = EventService.Create(EventTier.Small, "Paid Draft", user.Id);
+        var @event = createResult.Value.Event;
+        var organizer = createResult.Value.Organizer;
+
+        var categoryId = SeedCategoryInContext(context);
+        MakePublishReadyViaUpdate(@event, categoryId, user.Id, admissionType: AdmissionType.Paid);
+        TicketTypeService.Create(@event, "General Admission", "Standard entry", 2500, 100);
+
+        context.Events.Add(@event);
+        context.EventOrganizers.Add(organizer);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return @event.Id;
+    }
+
     private static async Task<Guid> SeedDraftEventAsync(
         string databaseName,
         FakeUserIdentityAccessor identity)
@@ -1030,7 +1148,8 @@ public class GetEventQueryHandlerTests
         Guid categoryId,
         Guid actingUserId,
         DateTime? segmentStartsAt = null,
-        DateTime? segmentEndsAt = null)
+        DateTime? segmentEndsAt = null,
+        AdmissionType admissionType = AdmissionType.Free)
     {
         var start = new DateTime(2026, 7, 1, 18, 0, 0, DateTimeKind.Utc);
         var end = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
@@ -1041,7 +1160,7 @@ public class GetEventQueryHandlerTests
             StartTime = start,
             EndTime = end,
             TimeZoneId = "Europe/Sofia",
-            AdmissionType = AdmissionType.Free,
+            AdmissionType = admissionType,
             Locations =
             [
                 new EventLocation

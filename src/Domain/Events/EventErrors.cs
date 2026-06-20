@@ -139,4 +139,8 @@ public static class EventErrors
     public static readonly Error CannotSwitchToFreeWithTicketSales = Error.Conflict(
         "Events.CannotSwitchToFreeWithTicketSales",
         "Ticket types with sales cannot remain when switching a draft event to free admission");
+
+    public static readonly Error PaidPublishRequiresTicketTypes = Error.Validation(
+        "Events.PaidPublishRequiresTicketTypes",
+        "Paid events require at least one ticket type with a positive price and capacity before publish");
 }

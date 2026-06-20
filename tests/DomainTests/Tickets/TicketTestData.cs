@@ -14,9 +14,8 @@ internal static class TicketTestData
 
     internal static Event MakePaidPublished()
     {
-        var (draft, _) = EventTestData.CreateDraft();
-        EventTestData.MakePublishReady(draft);
-        draft.AdmissionType = AdmissionType.Paid;
+        var draft = MakePaidDraft();
+        CreateTicketType(draft);
 
         var publishResult = EventService.Publish(
             draft,
@@ -29,6 +28,14 @@ internal static class TicketTestData
             throw new InvalidOperationException(publishResult.Error.Message);
         }
 
+        return draft;
+    }
+
+    internal static Event MakePaidDraft()
+    {
+        var (draft, _) = EventTestData.CreateDraft();
+        EventTestData.MakePublishReady(draft);
+        draft.AdmissionType = AdmissionType.Paid;
         return draft;
     }
 

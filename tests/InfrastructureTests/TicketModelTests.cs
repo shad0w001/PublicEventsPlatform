@@ -110,14 +110,14 @@ public class TicketModelTests
                 },
                 actingUserId: buyer.Id);
 
-            EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 6);
-
             var ticketType = TicketTypeService.Create(
                 @event,
                 name: "General",
                 description: "Entry",
                 priceCents: 1500,
                 capacity: 20).Value;
+
+            EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 6);
 
             var order = OrderService.CreatePending(
                 @event,

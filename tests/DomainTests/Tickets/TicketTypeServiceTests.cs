@@ -9,7 +9,7 @@ public class TicketTypeServiceTests
     public void TicketTypeService_Should_CreateTicketType_When_PriceAndCapacityAreValid()
     {
         // Arrange
-        var @event = TicketTestData.MakePaidPublished();
+        var @event = TicketTestData.MakePaidDraft();
 
         // Act
         var result = TicketTypeService.Create(
@@ -51,7 +51,7 @@ public class TicketTypeServiceTests
         ticketType.ReservedQuantity = 3;
 
         // Act
-        var result = TicketTypeService.Update(ticketType, name: null, description: null, capacity: 7);
+        var result = TicketTypeService.Update(ticketType, name: null, description: null, priceCents: null, capacity: 7);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -68,7 +68,7 @@ public class TicketTypeServiceTests
         ticketType.ReservedQuantity = 3;
 
         // Act
-        var result = TicketTypeService.Update(ticketType, name: null, description: null, capacity: 10);
+        var result = TicketTypeService.Update(ticketType, name: null, description: null, priceCents: null, capacity: 10);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -95,7 +95,7 @@ public class TicketTypeServiceTests
     public void TicketTypeService_Should_DeleteTicketType_When_NoSalesOrReservations()
     {
         // Arrange
-        var @event = TicketTestData.MakePaidPublished();
+        var @event = TicketTestData.MakePaidDraft();
         var ticketType = TicketTestData.CreateTicketType(@event);
 
         // Act
@@ -120,5 +120,51 @@ public class TicketTypeServiceTests
 
         // Assert
         Assert.Equal(60, remaining);
+    }
+
+    [Fact]
+    public void TicketTypeService_Should_ReturnPaidAdmissionRequired_When_EventIsFree()
+    {
+        // Arrange
+        var (draft, _) = DomainTests.Events.EventTestData.CreateDraft();
+        DomainTests.Events.EventTestData.MakePublishReady(draft);
+
+        // Act
+        var result = TicketTypeService.Create(draft, "General", null, priceCents: 2500, capacity: 100);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(TicketErrors.PaidAdmissionRequired.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public void TicketTypeService_Should_UpdatePrice_When_NoSalesExist()
+    {
+        // Arrange
+        var @event = TicketTestData.MakePaidPublished();
+        var ticketType = TicketTestData.CreateTicketType(@event, priceCents: 2500);
+
+        // Act
+        var result = TicketTypeService.Update(ticketType, name: null, description: null, priceCents: 3000, capacity: null);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3000, ticketType.PriceCents);
+    }
+
+    [Fact]
+    public void TicketTypeService_Should_ReturnPriceImmutableAfterSales_When_PriceChangedAfterSale()
+    {
+        // Arrange
+        var @event = TicketTestData.MakePaidPublished();
+        var ticketType = TicketTestData.CreateTicketType(@event);
+        ticketType.SoldQuantity = 1;
+
+        // Act
+        var result = TicketTypeService.Update(ticketType, name: null, description: null, priceCents: 3000, capacity: null);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(TicketErrors.PriceImmutableAfterSales.Code, result.Error.Code);
     }
 }

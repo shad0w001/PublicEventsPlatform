@@ -1,5 +1,6 @@
 using Application.Plugins;
 using Application.Events.Services;
+using Application.Tickets;
 using Domain.Events;
 using Domain.Events.EventLocations;
 
@@ -12,7 +13,8 @@ internal static class EventMapping
         EventEditAccess editAccess,
         string? categoryName,
         IReadOnlyList<EventPluginResponse>? plugins = null,
-        EventRsvpSummaryResponse? rsvpSummary = null) =>
+        EventRsvpSummaryResponse? rsvpSummary = null,
+        IReadOnlyList<TicketTypeResponse>? ticketTypes = null) =>
         new(
             @event.Id,
             @event.Tier,
@@ -34,6 +36,7 @@ internal static class EventMapping
             @event.PublishedAt,
             @event.Locations.Select(ToLocationResponse).ToList(),
             plugins ?? [],
+            ticketTypes ?? MapTicketTypes(@event),
             rsvpSummary);
 
     public static PublicEventResponse ToPublicResponse(
@@ -42,7 +45,8 @@ internal static class EventMapping
         bool hostIsGroup,
         string? categoryName,
         IReadOnlyList<EventPluginResponse>? plugins = null,
-        EventRsvpSummaryResponse? rsvpSummary = null) =>
+        EventRsvpSummaryResponse? rsvpSummary = null,
+        IReadOnlyList<TicketTypeResponse>? ticketTypes = null) =>
         new(
             @event.Tier,
             @event.Title,
@@ -61,7 +65,13 @@ internal static class EventMapping
             hostIsGroup,
             @event.Locations.Select(ToLocationResponse).ToList(),
             plugins ?? [],
+            ticketTypes ?? MapTicketTypes(@event),
             rsvpSummary);
+
+    private static IReadOnlyList<TicketTypeResponse> MapTicketTypes(Event @event) =>
+        @event.AdmissionType == AdmissionType.Paid
+            ? TicketMapping.ToResponses(@event.TicketTypes)
+            : [];
 
     public static EventLocation ToDomainLocation(EventLocationResponse location) =>
         new()

@@ -341,7 +341,14 @@ public static class EventService
             return Result.Failure(EventErrors.AdmissionTypeRequired);
         }
 
-        // Phase 6: paid events will require at least one TicketType before publish.
+        if (@event.AdmissionType == AdmissionType.Paid)
+        {
+            var ticketTypesResult = ValidatePaidPublishTicketTypes(@event.TicketTypes);
+            if (ticketTypesResult.IsFailure)
+            {
+                return ticketTypesResult;
+            }
+        }
 
         if (@event.Locations.Count == 0)
         {
@@ -360,6 +367,21 @@ public static class EventService
             {
                 return segmentResult;
             }
+        }
+
+        return Result.Success();
+    }
+
+    private static Result ValidatePaidPublishTicketTypes(IReadOnlyList<TicketType> ticketTypes)
+    {
+        if (ticketTypes.Count == 0)
+        {
+            return Result.Failure(EventErrors.PaidPublishRequiresTicketTypes);
+        }
+
+        if (!ticketTypes.Any(t => t.PriceCents > 0 && t.Capacity > 0))
+        {
+            return Result.Failure(EventErrors.PaidPublishRequiresTicketTypes);
         }
 
         return Result.Success();

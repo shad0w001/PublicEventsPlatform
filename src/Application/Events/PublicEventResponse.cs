@@ -1,4 +1,5 @@
 using Application.Plugins;
+using Application.Tickets;
 using Domain.Events;
 
 namespace Application.Events;
@@ -21,4 +22,5 @@ public sealed record PublicEventResponse(
     bool HostIsGroup,
     IReadOnlyList<EventLocationResponse> Locations,
     IReadOnlyList<EventPluginResponse> Plugins,
+    IReadOnlyList<TicketTypeResponse> TicketTypes,
     EventRsvpSummaryResponse? RsvpSummary = null);

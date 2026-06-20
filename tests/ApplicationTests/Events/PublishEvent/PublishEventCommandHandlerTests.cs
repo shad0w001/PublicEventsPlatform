@@ -1,6 +1,7 @@
 using Application.Abstractions.Authentication;
 using Application.Events;
 using Application.Events.PublishEvent;
+using Domain.Tickets.Services;
 using Application.Events.Services;
 using Application.Events.UpdateEvent;
 using Application.Users;
@@ -42,6 +43,28 @@ public class PublishEventCommandHandlerTests
         Assert.Equal(EventStatus.Published, result.Value.Status);
         Assert.NotNull(result.Value.PublishedAt);
         Assert.Equal("Music", result.Value.CategoryName);
+    }
+
+    [Fact]
+    public async Task PublishEventCommandHandler_Should_ReturnPaidPublishRequiresTicketTypes_When_PaidDraftHasNoTicketTypes()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|publish-paid-no-types", "paid-no-types@example.com");
+        var eventId = await SeedPublishReadyDraftAsync(
+            databaseName,
+            identity,
+            admissionType: AdmissionType.Paid,
+            seedTicketType: false);
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new PublishEventCommand(eventId), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(EventErrors.PaidPublishRequiresTicketTypes.Code, result.Error.Code);
     }
 
     [Fact]
@@ -453,7 +476,8 @@ public class PublishEventCommandHandlerTests
         FakeUserIdentityAccessor identity,
         string title = "Publish Ready",
         AdmissionType admissionType = AdmissionType.Free,
-        bool softDeleted = false)
+        bool softDeleted = false,
+        bool seedTicketType = true)
     {
         await using var context = CreateContext(databaseName);
         var currentUserService = new CurrentUserService(
@@ -468,6 +492,11 @@ public class PublishEventCommandHandlerTests
 
         var categoryId = SeedCategoryInContext(context);
         MakePublishReadyViaUpdate(@event, categoryId, user.Id, admissionType);
+
+        if (admissionType == AdmissionType.Paid && seedTicketType)
+        {
+            TicketTypeService.Create(@event, "General Admission", "Standard entry", priceCents: 2500, capacity: 100);
+        }
 
         if (softDeleted)
         {
