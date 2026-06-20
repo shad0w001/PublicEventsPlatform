@@ -1,5 +1,6 @@
 ﻿using Domain.Events.EventLocations;
 using Domain.Plugins;
+using Domain.Tickets;
 using SharedKernel;
 
 namespace Domain.Events;
@@ -28,4 +29,5 @@ public class Event : Entity
     public List<EventOrganizer> Organizers { get; internal set; } = [];
     public List<EventAttendee> Attendees { get; internal set; } = [];
     public List<PluginUsage> Plugins { get; internal set; } = [];
+    public List<TicketType> TicketTypes { get; internal set; } = [];
 }

@@ -3,6 +3,7 @@ using Domain.Events;
 using Domain.Groups;
 using Domain.Participants;
 using Domain.Plugins;
+using Domain.Tickets;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,11 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
         public DbSet<Plugin> Plugins => Set<Plugin>();
         public DbSet<PluginUsage> PluginUsages => Set<PluginUsage>();
         public DbSet<EventCategory> EventCategories => Set<EventCategory>();
+        public DbSet<TicketType> TicketTypes => Set<TicketType>();
+        public DbSet<Order> Orders => Set<Order>();
+        public DbSet<Ticket> Tickets => Set<Ticket>();
+        public DbSet<TicketCode> TicketCodes => Set<TicketCode>();
+        public DbSet<TicketValidation> TicketValidations => Set<TicketValidation>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
