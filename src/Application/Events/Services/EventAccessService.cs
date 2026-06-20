@@ -229,6 +229,25 @@ internal sealed class EventAccessService(IApplicationDbContext context)
             .Select(m => m.GroupId)
             .ToListAsync(cancellationToken);
 
+    public async Task<Result> CanViewAsBuyerAsync(
+        Guid buyerParticipantId,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        if (buyerParticipantId == userId)
+        {
+            return Result.Success();
+        }
+
+        var organizerPlusGroupIds = await GetOrganizerPlusGroupIdsAsync(userId, cancellationToken);
+        if (organizerPlusGroupIds.Contains(buyerParticipantId))
+        {
+            return Result.Success();
+        }
+
+        return Result.Failure(TicketErrors.InsufficientPurchasePermissions);
+    }
+
     public Guid GetHostParticipantId(Event @event) =>
         @event.Organizers.Single().ParticipantId;
 

@@ -104,6 +104,10 @@ public static class TicketErrors
         "Tickets.OrderNotFound",
         $"The order with the Id = '{orderId}' was not found");
 
+    public static Error TicketNotFound(Guid ticketId) => Error.NotFound(
+        "Tickets.TicketNotFound",
+        $"The ticket with the Id = '{ticketId}' was not found");
+
     public static readonly Error CheckoutSessionMismatch = Error.Validation(
         "Tickets.CheckoutSessionMismatch",
         "Checkout session does not match this order");
