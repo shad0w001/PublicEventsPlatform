@@ -1,11 +1,13 @@
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
 using Application.Abstractions.Media;
+using Application.Abstractions.Notifications;
 using Application.Abstractions.Payments;
 using Infrastructure.Authentication;
 using Infrastructure.Database;
 using Infrastructure.Media;
 using Infrastructure.Messaging;
+using Infrastructure.Notifications;
 using Infrastructure.Payments;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +43,8 @@ public static class DependencyInjection
         services.AddScoped<IStripeWebhookVerifier, StripeWebhookVerifier>();
         services.AddScoped<ITicketTypeRowLock, TicketTypeRowLock>();
         services.AddScoped<ITicketRowLock, TicketRowLock>();
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<ISmtpClient, MailKitSmtpClient>();
 
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
         services.AddSingleton<IKafkaProducer, KafkaProducer>();

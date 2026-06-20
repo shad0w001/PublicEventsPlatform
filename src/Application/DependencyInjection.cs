@@ -5,6 +5,8 @@ using Application.Events.Services;
 using Application.Groups;
 using Application.Groups.Services;
 using Application.Media;
+using Application.Notifications;
+using Application.Notifications.Services;
 using Application.Payments;
 using Application.Users;
 using Application.Users.Services;
@@ -34,7 +36,12 @@ public static class DependencyInjection
         services.Configure<StripeOptions>(
             configuration.GetSection(StripeOptions.SectionName));
 
+        services.Configure<NotificationsOptions>(
+            configuration.GetSection(NotificationsOptions.SectionName));
+
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<NotificationRecipientService>();
+        services.AddScoped<NotificationLinkBuilder>();
         services.AddScoped<GroupAccessService>();
         services.AddScoped<EventAccessService>();
         services.AddScoped<EventVenueConflictService>();
