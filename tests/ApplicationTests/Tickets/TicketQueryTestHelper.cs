@@ -52,11 +52,6 @@ internal static class TicketQueryTestHelper
         var ticketType = TicketTypeService.Create(@event, "General", "Entry", 2500, 100).Value;
         EventService.Publish(@event, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 6);
 
-        if (cancelledEvent)
-        {
-            EventService.Cancel(@event);
-        }
-
         var orderResult = OrderService.CreatePending(
             @event,
             ticketType,
@@ -68,6 +63,11 @@ internal static class TicketQueryTestHelper
         OrderService.AttachCheckoutSession(order, CheckoutSessionId, null);
         OrderService.MarkPaid(order, ticketType, quantity);
         var tickets = TicketService.IssueTickets(order, ticketType, buyer.Id, quantity).Value;
+
+        if (cancelledEvent)
+        {
+            EventService.Cancel(@event);
+        }
 
         context.Events.Add(@event);
         context.EventOrganizers.Add(organizer);
@@ -131,7 +131,6 @@ internal static class TicketQueryTestHelper
         OrderService.MarkPaid(order, ticketType, quantity);
         var tickets = TicketService.IssueTickets(order, ticketType, group.Id, quantity).Value;
 
-        context.Users.Add(organizer);
         context.Groups.Add(group);
         context.GroupMemberships.Add(groupCreate.Value.OwnerMembership);
         context.GroupMemberships.Add(organizerMembership);
@@ -159,13 +158,12 @@ internal static class TicketQueryTestHelper
             .Include(t => t.Validations)
             .SingleAsync(t => t.Id == ticketId);
 
-        ticket.Validations.Add(new TicketValidation
+        context.TicketValidations.Add(new TicketValidation
         {
             TicketId = ticket.Id,
             ValidatedByUserId = validatorUserId,
             Method = TicketValidationMethod.QrScan,
-            Status = TicketValidationStatus.Valid,
-            Ticket = ticket
+            Status = TicketValidationStatus.Valid
         });
         await context.SaveChangesAsync(CancellationToken.None);
     }

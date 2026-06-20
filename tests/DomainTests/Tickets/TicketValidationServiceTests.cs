@@ -107,6 +107,52 @@ public class TicketValidationServiceTests
     }
 
     [Fact]
+    public void TicketValidationService_Should_ReturnValid_When_AtEarlyEntryBoundary()
+    {
+        // Arrange
+        var @event = TicketTestData.MakePaidPublished();
+        var ticket = TicketTestData.CreateTicketWithCode(@event);
+        var earlyEntry = EventTestData.DefaultEventStart.AddMinutes(-TicketConstants.EarlyEntryMinutes);
+
+        // Act
+        var result = TicketValidationService.Validate(
+            ticket,
+            @event,
+            validations: [],
+            code: ticket.Id.ToString(),
+            TicketValidationMethod.QrScan,
+            TicketTestData.ValidatorUserId,
+            earlyEntry);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(TicketValidationStatus.Valid, result.Value.Status);
+    }
+
+    [Fact]
+    public void TicketValidationService_Should_ReturnInvalid_When_TooEarlyBeforeEarlyEntryWindow()
+    {
+        // Arrange
+        var @event = TicketTestData.MakePaidPublished();
+        var ticket = TicketTestData.CreateTicketWithCode(@event);
+        var tooEarly = EventTestData.DefaultEventStart.AddMinutes(-(TicketConstants.EarlyEntryMinutes + 1));
+
+        // Act
+        var result = TicketValidationService.Validate(
+            ticket,
+            @event,
+            validations: [],
+            code: ticket.Id.ToString(),
+            TicketValidationMethod.QrScan,
+            TicketTestData.ValidatorUserId,
+            tooEarly);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(TicketValidationStatus.Invalid, result.Value.Status);
+    }
+
+    [Fact]
     public void TicketValidationService_Should_ReturnInvalid_When_OutsideEventWindow()
     {
         // Arrange

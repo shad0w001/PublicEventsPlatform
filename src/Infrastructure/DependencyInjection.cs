@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<ICheckoutSessionProvider, StripeCheckoutSessionProvider>();
         services.AddScoped<IStripeWebhookVerifier, StripeWebhookVerifier>();
         services.AddScoped<ITicketTypeRowLock, TicketTypeRowLock>();
+        services.AddScoped<ITicketRowLock, TicketRowLock>();
 
         return services;
     }

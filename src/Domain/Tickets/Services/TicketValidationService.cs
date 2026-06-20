@@ -45,7 +45,8 @@ public static class TicketValidationService
             return TicketValidationStatus.Invalid;
         }
 
-        if (utcNow < @event.StartTime || utcNow > @event.EndTime)
+        var windowStart = @event.StartTime.AddMinutes(-TicketConstants.EarlyEntryMinutes);
+        if (utcNow < windowStart || utcNow > @event.EndTime)
         {
             return TicketValidationStatus.Invalid;
         }
@@ -85,8 +86,7 @@ public static class TicketValidationService
             TicketId = ticket.Id,
             ValidatedByUserId = validatedByUserId,
             Method = method,
-            Status = status,
-            Ticket = ticket
+            Status = status
         };
 
         ticket.Validations.Add(validation);

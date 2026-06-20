@@ -94,6 +94,28 @@ internal sealed class EventAccessService(IApplicationDbContext context)
         return @event;
     }
 
+    public async Task<Result<Event>> GetActiveEventForDoorValidationAsync(
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var @event = await context.Events
+            .AsNoTracking()
+            .Include(e => e.Organizers)
+            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+
+        if (@event is null)
+        {
+            return Result.Failure<Event>(EventErrors.NotFound(eventId));
+        }
+
+        if (@event.IsDeleted)
+        {
+            return Result.Failure<Event>(EventErrors.Deleted(eventId));
+        }
+
+        return @event;
+    }
+
     public async Task<Result<Event>> GetActiveEventForAdmissionTypeUpdateAsync(
         Guid eventId,
         CancellationToken cancellationToken)
