@@ -10,8 +10,6 @@ public sealed record GroupJoinPolicyChanged(Guid GroupId, GroupJoinPolicy NewPol
 
 public sealed record GroupSoftDeleted(Guid GroupId) : DomainEvent;
 
-public sealed record GroupRestored(Guid GroupId) : DomainEvent;
-
 public sealed record GroupMemberJoined(Guid GroupId, Guid UserId, GroupMemberRole Role) : DomainEvent;
 
 public sealed record GroupMemberLeft(Guid GroupId, Guid UserId) : DomainEvent;
