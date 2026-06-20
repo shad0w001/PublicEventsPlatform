@@ -27,7 +27,16 @@ internal sealed class OutboxDispatcher(
             {
                 await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
                 var publishingService = scope.ServiceProvider.GetRequiredService<OutboxPublishingService>();
-                await publishingService.PublishPendingAsync(stoppingToken);
+                var publishedCount = await publishingService.PublishPendingAsync(stoppingToken);
+
+                if (publishedCount > 0)
+                {
+                    logger.LogInformation("Published {PublishedCount} outbox message(s) to Kafka", publishedCount);
+                }
+                else
+                {
+                    logger.LogDebug("No pending outbox messages");
+                }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

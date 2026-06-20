@@ -1,11 +1,13 @@
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Messaging;
+using Application.Abstractions.Notifications;
 using Application.Events;
 using Application.Events.Services;
 using Application.Groups;
 using Application.Groups.Services;
 using Application.Media;
 using Application.Notifications;
+using Application.Notifications.Handlers;
 using Application.Notifications.Services;
 using Application.Payments;
 using Application.Users;
@@ -42,6 +44,11 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<NotificationRecipientService>();
         services.AddScoped<NotificationLinkBuilder>();
+        services.AddScoped<ITicketPurchaseCompletedEmailHandler, TicketPurchaseCompletedEmailHandler>();
+        services.AddScoped<IEventRsvpStatusChangedEmailHandler, EventRsvpStatusChangedEmailHandler>();
+        services.AddScoped<IGroupJoinApplicationSubmittedEmailHandler, GroupJoinApplicationSubmittedEmailHandler>();
+        services.AddScoped<IGroupJoinApplicationApprovedEmailHandler, GroupJoinApplicationApprovedEmailHandler>();
+        services.AddScoped<IGroupJoinApplicationRejectedEmailHandler, GroupJoinApplicationRejectedEmailHandler>();
         services.AddScoped<GroupAccessService>();
         services.AddScoped<EventAccessService>();
         services.AddScoped<EventVenueConflictService>();

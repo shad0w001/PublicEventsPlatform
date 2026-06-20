@@ -49,7 +49,9 @@ public static class DependencyInjection
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
         services.AddSingleton<IKafkaProducer, KafkaProducer>();
         services.AddScoped<OutboxPublishingService>();
+        services.AddScoped<ConsumerIdempotencyService>();
         services.AddHostedService<OutboxDispatcher>();
+        services.AddHostedService<NotificationKafkaConsumer>();
 
         return services;
     }

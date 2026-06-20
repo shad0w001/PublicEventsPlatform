@@ -13,7 +13,7 @@ internal sealed class OutboxPublishingService(
     IOptions<KafkaOptions> options,
     ILogger<OutboxPublishingService> logger)
 {
-    public async Task PublishPendingAsync(CancellationToken cancellationToken)
+    public async Task<int> PublishPendingAsync(CancellationToken cancellationToken)
     {
         await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -30,8 +30,10 @@ internal sealed class OutboxPublishingService(
 
         if (pendingMessages.Count == 0)
         {
-            return;
+            return 0;
         }
+
+        var publishedCount = 0;
 
         foreach (var message in pendingMessages)
         {
@@ -45,6 +47,7 @@ internal sealed class OutboxPublishingService(
 
                 message.PublishedAt = DateTime.UtcNow;
                 message.Error = null;
+                publishedCount++;
             }
             catch (Exception ex)
             {
@@ -61,5 +64,6 @@ internal sealed class OutboxPublishingService(
         }
 
         await context.SaveChangesAsync(cancellationToken);
+        return publishedCount;
     }
 }

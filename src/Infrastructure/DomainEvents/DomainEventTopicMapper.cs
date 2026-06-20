@@ -22,4 +22,6 @@ internal static class DomainEventTopicMapper
 
     public static bool TryGetTopic(IDomainEvent domainEvent, out string topic) =>
         Topics.TryGetValue(domainEvent.GetType(), out topic!);
+
+    public static IReadOnlyCollection<string> GetAllTopics() => Topics.Values;
 }

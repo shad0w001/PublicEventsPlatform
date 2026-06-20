@@ -3,9 +3,18 @@ using Infrastructure;
 using Infrastructure.Database;
 using Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using WebApi;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.Configure<HostOptions>(options =>
+    {
+        options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+    });
+}
 
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -23,6 +32,13 @@ using (var scope = app.Services.CreateScope())
 }
 
 await KafkaHostWait.WaitForBrokerAsync(app.Configuration);
+
+using (var scope = app.Services.CreateScope())
+{
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+        .CreateLogger("Infrastructure.Messaging.KafkaTopicProvisioner");
+    await KafkaTopicProvisioner.EnsureTopicsAsync(app.Configuration, logger);
+}
 
 if (app.Environment.IsDevelopment())
 {
