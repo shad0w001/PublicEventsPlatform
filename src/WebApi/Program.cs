@@ -1,6 +1,7 @@
 using Application;
 using Infrastructure;
 using Infrastructure.Database;
+using Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using WebApi;
 
@@ -20,6 +21,8 @@ using (var scope = app.Services.CreateScope())
     await WaitForDatabaseAsync(dbContext);
     await dbContext.Database.MigrateAsync();
 }
+
+await KafkaHostWait.WaitForBrokerAsync(app.Configuration);
 
 if (app.Environment.IsDevelopment())
 {

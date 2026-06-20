@@ -5,6 +5,7 @@ using Application.Abstractions.Payments;
 using Infrastructure.Authentication;
 using Infrastructure.Database;
 using Infrastructure.Media;
+using Infrastructure.Messaging;
 using Infrastructure.Payments;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,11 @@ public static class DependencyInjection
         services.AddScoped<IStripeWebhookVerifier, StripeWebhookVerifier>();
         services.AddScoped<ITicketTypeRowLock, TicketTypeRowLock>();
         services.AddScoped<ITicketRowLock, TicketRowLock>();
+
+        services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
+        services.AddSingleton<IKafkaProducer, KafkaProducer>();
+        services.AddScoped<OutboxPublishingService>();
+        services.AddHostedService<OutboxDispatcher>();
 
         return services;
     }

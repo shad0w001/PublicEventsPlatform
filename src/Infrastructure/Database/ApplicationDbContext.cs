@@ -5,7 +5,9 @@ using Domain.Participants;
 using Domain.Plugins;
 using Domain.Tickets;
 using Domain.Users;
+using Infrastructure.DomainEvents;
 using Microsoft.EntityFrameworkCore;
+using SharedKernel;
 
 namespace Infrastructure.Database;
 
@@ -27,6 +29,8 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
         public DbSet<Ticket> Tickets => Set<Ticket>();
         public DbSet<TicketCode> TicketCodes => Set<TicketCode>();
         public DbSet<TicketValidation> TicketValidations => Set<TicketValidation>();
+        internal DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+        internal DbSet<ProcessedMessage> ProcessedMessages => Set<ProcessedMessage>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -40,5 +44,36 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
         base.OnModelCreating(modelBuilder);
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Outbox rows are part of the same transaction as business data (template option 1).
+        AddOutboxMessages();
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void AddOutboxMessages()
+    {
+        var entitiesWithEvents = ChangeTracker
+            .Entries<Entity>()
+            .Select(entry => entry.Entity)
+            .Where(entity => entity.DomainEvents.Count > 0)
+            .ToList();
+
+        foreach (var entity in entitiesWithEvents)
+        {
+            foreach (var domainEvent in entity.DomainEvents.ToList())
+            {
+                var outboxMessage = OutboxMessageFactory.CreateFromDomainEvent(domainEvent);
+                if (outboxMessage is not null)
+                {
+                    OutboxMessages.Add(outboxMessage);
+                }
+            }
+
+            entity.ClearDomainEvents();
+        }
     }
 }
