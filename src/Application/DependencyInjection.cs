@@ -1,9 +1,11 @@
 using Application.Abstractions.Authentication;
+using Application.Abstractions.Groups;
 using Application.Abstractions.Messaging;
 using Application.Abstractions.Notifications;
 using Application.Events;
 using Application.Events.Services;
 using Application.Groups;
+using Application.Groups.ProcessGroupSoftDeleted;
 using Application.Groups.Services;
 using Application.Media;
 using Application.Notifications;
@@ -41,6 +43,7 @@ public static class DependencyInjection
         services.Configure<NotificationsOptions>(
             configuration.GetSection(NotificationsOptions.SectionName));
 
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<NotificationRecipientService>();
         services.AddScoped<NotificationLinkBuilder>();
@@ -50,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IGroupJoinApplicationApprovedEmailHandler, GroupJoinApplicationApprovedEmailHandler>();
         services.AddScoped<IGroupJoinApplicationRejectedEmailHandler, GroupJoinApplicationRejectedEmailHandler>();
         services.AddScoped<IEventCancelledEmailHandler, EventCancelledEmailHandler>();
+        services.AddScoped<IGroupSoftDeletedCascadeHandler, GroupSoftDeletedCascadeHandler>();
         services.AddScoped<GroupAccessService>();
         services.AddScoped<EventAccessService>();
         services.AddScoped<EventVenueConflictService>();

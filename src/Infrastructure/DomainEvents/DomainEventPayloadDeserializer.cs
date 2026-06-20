@@ -35,4 +35,8 @@ internal static class DomainEventPayloadDeserializer
     public static GroupJoinApplicationRejected DeserializeGroupJoinApplicationRejected(string payload) =>
         JsonSerializer.Deserialize<GroupJoinApplicationRejected>(payload, SerializerOptions)
         ?? throw new InvalidOperationException("Failed to deserialize GroupJoinApplicationRejected payload.");
+
+    public static GroupSoftDeleted DeserializeGroupSoftDeleted(string payload) =>
+        JsonSerializer.Deserialize<GroupSoftDeleted>(payload, SerializerOptions)
+        ?? throw new InvalidOperationException("Failed to deserialize GroupSoftDeleted payload.");
 }
