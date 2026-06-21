@@ -22,7 +22,7 @@ public sealed class EventOrdersController(
             Requires verified email. Buyer is the authenticated user unless participantId
             is a group the caller may buy for (Organizer, Administrator, or Owner).
             Reserves inventory synchronously (DB row lock) and returns a Stripe Checkout URL.
-            Ticket fulfillment happens via webhook after payment (Phase 6.6)—success redirect alone
+            Ticket fulfillment happens via Stripe webhook after payment—success redirect alone
             does not issue tickets.
             Optional successUrl/cancelUrl override Payments:Stripe:SuccessUrlBase/CancelUrlBase.
             Errors: Tickets.EventNotPublished, Tickets.EventCancelled (409),

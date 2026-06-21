@@ -21,7 +21,7 @@ public sealed class OrdersController(
             Returns purchase confirmation for a paid order (Stripe success redirect target).
             Requires verified email. Caller must be the buyer (self) or Organizer+ on a group buyer.
             Rich event summary (title, banner, times, host) plus ticket ids for navigation to ticket pages.
-            refundPending is true when the event was cancelled but the order is still Paid (refund handled in Phase 7).
+            refundPending is true when the event was cancelled but the order is still Paid (refund processed manually in Stripe Dashboard).
             Pending or expired orders return 409 Tickets.OrderNotPaid.
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "Order confirmation", typeof(OrderConfirmationResponse))]
