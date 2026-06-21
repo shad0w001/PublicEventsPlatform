@@ -1,11 +1,13 @@
 using Application.Events.BrowseEvents;
 using Application.Events.Services;
+using ApplicationTests.Search;
 using Domain.Events;
 using Domain.Events.EventLocations;
 using Domain.Events.Services;
 using Domain.Users;
 using Domain.Users.Services;
 using Infrastructure.Database;
+using Infrastructure.Search;
 using Microsoft.EntityFrameworkCore;
 
 namespace ApplicationTests.Events.BrowseEvents;
@@ -348,10 +350,54 @@ public class BrowseEventsQueryHandlerTests
         var handler = CreateHandler(context);
 
         // Act
-        var result = await handler.Handle(new BrowseEventsQuery(Q: "jazz"), CancellationToken.None);
+        var result = await handler.Handle(new BrowseEventsQuery(Query: "jazz"), CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
+        Assert.Single(result.Value.Items);
+        Assert.Equal("Jazz Music Festival", result.Value.Items[0].Title);
+    }
+
+    [Fact]
+    public async Task BrowseEventsQueryHandler_Should_CallEmbeddingGenerator_When_QueryProvided()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var user = SeedUser(databaseName);
+        await SeedBrowsableEventAsync(databaseName, user, "Jazz Music Festival", FutureStart, FutureEnd);
+
+        await using var context = CreateContext(databaseName);
+        var embeddingGenerator = new FakeEmbeddingGenerator();
+        var handler = CreateHandler(context, embeddingGenerator);
+
+        // Act
+        var result = await handler.Handle(new BrowseEventsQuery(Query: "jazz night"), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, embeddingGenerator.CallCount);
+        Assert.Equal("jazz night", embeddingGenerator.LastText);
+    }
+
+    [Fact]
+    public async Task BrowseEventsQueryHandler_Should_ReturnStructuralTotalCount_When_QueryProvided()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var user = SeedUser(databaseName);
+        await SeedBrowsableEventAsync(databaseName, user, "Jazz Music Festival", FutureStart, FutureEnd);
+        await SeedBrowsableEventAsync(databaseName, user, "Football Match", FutureStart, FutureEnd);
+        await SeedBrowsableEventAsync(databaseName, user, "Art Exhibition", FutureStart, FutureEnd);
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context);
+
+        // Act
+        var result = await handler.Handle(new BrowseEventsQuery(Query: "jazz"), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3, result.Value.TotalCount);
         Assert.Single(result.Value.Items);
         Assert.Equal("Jazz Music Festival", result.Value.Items[0].Title);
     }
@@ -629,8 +675,17 @@ public class BrowseEventsQueryHandlerTests
         return @event.Id;
     }
 
-    private static BrowseEventsQueryHandler CreateHandler(ApplicationDbContext context) =>
-        new(context, new EventAccessService(context));
+    private static BrowseEventsQueryHandler CreateHandler(
+        ApplicationDbContext context,
+        FakeEmbeddingGenerator? embeddingGenerator = null)
+    {
+        var generator = embeddingGenerator ?? new FakeEmbeddingGenerator();
+        return new BrowseEventsQueryHandler(
+            context,
+            new EventAccessService(context),
+            generator,
+            new EventSemanticBrowseRerankService(context));
+    }
 
     private static ApplicationDbContext CreateContext(string databaseName)
     {

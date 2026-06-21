@@ -54,6 +54,7 @@ public static class DependencyInjection
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
         services.Configure<EmbeddingsOptions>(configuration.GetSection(EmbeddingsOptions.SectionName));
         services.AddHttpClient<IEmbeddingGenerator, GeminiEmbeddingGenerator>();
+        services.AddScoped<IEventSemanticBrowseRerankService, EventSemanticBrowseRerankService>();
         services.AddSingleton<IKafkaProducer, KafkaProducer>();
         services.AddScoped<OutboxPublishingService>();
         services.AddScoped<ConsumerIdempotencyService>();
