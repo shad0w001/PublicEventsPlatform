@@ -38,7 +38,9 @@ public class EventModelTests
         // Act
         var entityType = context.Model.FindEntityType(typeof(Event));
         var statusIndex = entityType?.GetIndexes()
-            .SingleOrDefault(i => i.Properties.Any(p => p.Name == nameof(Event.Status)));
+            .SingleOrDefault(i =>
+                i.Properties.Count == 1 &&
+                i.Properties.Any(p => p.Name == nameof(Event.Status)));
         var publishedAtIndex = entityType?.GetIndexes()
             .SingleOrDefault(i => i.Properties.Any(p => p.Name == nameof(Event.PublishedAt)));
 
@@ -46,6 +48,41 @@ public class EventModelTests
         Assert.NotNull(entityType);
         Assert.NotNull(statusIndex);
         Assert.NotNull(publishedAtIndex);
+    }
+
+    [Fact]
+    public void EventModel_Should_HaveStatusStartTimeCompositeIndex_When_ApplicationDbContextModelIsBuilt()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act
+        var entityType = context.Model.FindEntityType(typeof(Event));
+        var compositeIndex = entityType?.GetIndexes()
+            .SingleOrDefault(i =>
+                i.Properties.Count == 2 &&
+                i.Properties.Any(p => p.Name == nameof(Event.Status)) &&
+                i.Properties.Any(p => p.Name == nameof(Event.StartTime)));
+
+        // Assert
+        Assert.NotNull(entityType);
+        Assert.NotNull(compositeIndex);
+    }
+
+    [Fact]
+    public void EventLocationModel_Should_HaveCityIndex_When_ApplicationDbContextModelIsBuilt()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act
+        var locationEntityType = context.Model.GetEntityTypes()
+            .Single(t => t.ClrType == typeof(EventLocation));
+        var cityIndex = locationEntityType.GetIndexes()
+            .SingleOrDefault(i => i.Properties.Any(p => p.Name == nameof(EventLocation.City)));
+
+        // Assert
+        Assert.NotNull(cityIndex);
     }
 
     [Fact]
