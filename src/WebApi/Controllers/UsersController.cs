@@ -1,6 +1,10 @@
 using Application.Abstractions.Messaging;
 using Application.Events;
 using Application.Events.ListMyRsvps;
+using Application.Subscriptions;
+using Application.Subscriptions.CreateSubscription;
+using Application.Subscriptions.DeleteSubscription;
+using Application.Subscriptions.ListMySubscriptions;
 using Application.Users;
 using Application.Users.GetMe;
 using Application.Users.ListMyJoinApplications;
@@ -19,7 +23,10 @@ public sealed class UsersController(
     IQueryHandler<GetCurrentUserQuery, UserResponse> getMeHandler,
     IQueryHandler<ListMyJoinApplicationsQuery, IReadOnlyList<MyJoinApplicationResponse>> listMyApplicationsHandler,
     IQueryHandler<ListMyRsvpsQuery, IReadOnlyList<MyRsvpListItemResponse>> listMyRsvpsHandler,
-    IQueryHandler<ListMyTicketsQuery, MyTicketsResponse> listMyTicketsHandler)
+    IQueryHandler<ListMyTicketsQuery, MyTicketsResponse> listMyTicketsHandler,
+    ICommandHandler<CreateSubscriptionCommand, UserSubscriptionResponse> createSubscriptionHandler,
+    IQueryHandler<ListMySubscriptionsQuery, IReadOnlyList<UserSubscriptionResponse>> listMySubscriptionsHandler,
+    ICommandHandler<DeleteSubscriptionCommand> deleteSubscriptionHandler)
     : ControllerBase
 {
     [Authorize]
@@ -92,6 +99,73 @@ public sealed class UsersController(
     public async Task<IActionResult> ListMyTickets(CancellationToken cancellationToken)
     {
         var result = await listMyTicketsHandler.Handle(new ListMyTicketsQuery(), cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpPost("me/subscriptions")]
+    [SwaggerOperation(
+        Summary = "Create a subscription",
+        Description = """
+            Adds a discovery subscription for the caller. Requires verified email.
+            Kinds: City (city required), Category (categoryId required), Online (no extra fields).
+            Max 30 subscriptions per user; duplicates per kind+value return 409.
+            City values are normalized server-side for matching.
+            """)]
+    [SwaggerResponse(StatusCodes.Status201Created, "Subscription created", typeof(UserSubscriptionResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid payload or unknown category", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Duplicate or max limit reached", typeof(ProblemDetails))]
+    public async Task<IActionResult> CreateSubscription(
+        [FromBody] CreateSubscriptionCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await createSubscriptionHandler.Handle(command, cancellationToken);
+        if (result.IsFailure)
+        {
+            return result.ToActionResult();
+        }
+
+        return Created($"/api/users/me/subscriptions/{result.Value.Id}", result.Value);
+    }
+
+    [Authorize]
+    [HttpGet("me/subscriptions")]
+    [SwaggerOperation(
+        Summary = "List my subscriptions",
+        Description = """
+            Returns all discovery subscriptions for the caller. Requires verified email.
+            Sorted by createdAt descending (newest first). Category subscriptions include categoryName.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Subscription list", typeof(IReadOnlyList<UserSubscriptionResponse>))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified", typeof(ProblemDetails))]
+    public async Task<IActionResult> ListMySubscriptions(CancellationToken cancellationToken)
+    {
+        var result = await listMySubscriptionsHandler.Handle(new ListMySubscriptionsQuery(), cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpDelete("me/subscriptions/{subscriptionId:guid}")]
+    [SwaggerOperation(
+        Summary = "Delete a subscription",
+        Description = """
+            Removes one subscription owned by the caller. Requires verified email.
+            Returns 404 when the subscription id is missing or belongs to another user.
+            """)]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Subscription deleted")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Subscription not found", typeof(ProblemDetails))]
+    public async Task<IActionResult> DeleteSubscription(
+        Guid subscriptionId,
+        CancellationToken cancellationToken)
+    {
+        var result = await deleteSubscriptionHandler.Handle(
+            new DeleteSubscriptionCommand(subscriptionId),
+            cancellationToken);
         return result.ToActionResult();
     }
 }
