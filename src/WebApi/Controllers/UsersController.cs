@@ -1,5 +1,8 @@
 using Application.Abstractions.Messaging;
+using Application.Abstractions.Pagination;
 using Application.Events;
+using Application.Events.BrowseEvents;
+using Application.Events.GetMyFeed;
 using Application.Events.ListMyRsvps;
 using Application.Subscriptions;
 using Application.Subscriptions.CreateSubscription;
@@ -26,7 +29,8 @@ public sealed class UsersController(
     IQueryHandler<ListMyTicketsQuery, MyTicketsResponse> listMyTicketsHandler,
     ICommandHandler<CreateSubscriptionCommand, UserSubscriptionResponse> createSubscriptionHandler,
     IQueryHandler<ListMySubscriptionsQuery, IReadOnlyList<UserSubscriptionResponse>> listMySubscriptionsHandler,
-    ICommandHandler<DeleteSubscriptionCommand> deleteSubscriptionHandler)
+    ICommandHandler<DeleteSubscriptionCommand> deleteSubscriptionHandler,
+    IQueryHandler<GetMyFeedQuery, PagedResult<EventBrowseCardResponse>> getMyFeedHandler)
     : ControllerBase
 {
     [Authorize]
@@ -165,6 +169,31 @@ public sealed class UsersController(
     {
         var result = await deleteSubscriptionHandler.Handle(
             new DeleteSubscriptionCommand(subscriptionId),
+            cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [Authorize]
+    [HttpGet("me/feed")]
+    [SwaggerOperation(
+        Summary = "Get my subscription feed",
+        Description = """
+            Returns published future events matching the caller's discovery subscriptions. Requires verified email.
+            Location subscriptions (city and/or online) combine with category subscriptions using AND when both exist.
+            Within locations: city match OR virtual segment when Online is subscribed. Category-only subscriptions match globally.
+            Zero subscriptions returns an empty paginated list. Same event card shape as GET /api/events; sorted by startTime ascending.
+            SPA infinite scroll: request page=1, then page+1 on scroll and append items.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Feed", typeof(PagedResult<EventBrowseCardResponse>))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Email not verified", typeof(ProblemDetails))]
+    public async Task<IActionResult> GetMyFeed(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = EventDiscoveryConstants.DefaultPageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await getMyFeedHandler.Handle(
+            new GetMyFeedQuery(page, pageSize),
             cancellationToken);
         return result.ToActionResult();
     }

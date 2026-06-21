@@ -1,27 +1,36 @@
+using Application.Abstractions.Authentication;
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Application.Abstractions.Pagination;
+using Application.Events.BrowseEvents;
 using Application.Events.Services;
-using Domain.Events;
+using Application.Users.Services;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
 
-namespace Application.Events.BrowseEvents;
+namespace Application.Events.GetMyFeed;
 
-internal sealed class BrowseEventsQueryHandler(
+internal sealed class GetMyFeedQueryHandler(
     IApplicationDbContext context,
+    ICurrentUserService currentUserService,
+    IUserIdentityAccessor identityAccessor,
     EventAccessService eventAccessService)
-    : IQueryHandler<BrowseEventsQuery, PagedResult<EventBrowseCardResponse>>
+    : IQueryHandler<GetMyFeedQuery, PagedResult<EventBrowseCardResponse>>
 {
     public async Task<Result<PagedResult<EventBrowseCardResponse>>> Handle(
-        BrowseEventsQuery query,
+        GetMyFeedQuery query,
         CancellationToken cancellationToken)
     {
-        if (query.StartFrom is not null &&
-            query.StartTo is not null &&
-            query.StartFrom > query.StartTo)
+        var gateResult = VerifiedUserGate.EnsureVerified(identityAccessor);
+        if (gateResult.IsFailure)
         {
-            return Result.Failure<PagedResult<EventBrowseCardResponse>>(EventDiscoveryErrors.InvalidDateRange);
+            return Result.Failure<PagedResult<EventBrowseCardResponse>>(gateResult.Error);
+        }
+
+        var userResult = await currentUserService.GetOrProvisionAsync(cancellationToken);
+        if (userResult.IsFailure)
+        {
+            return Result.Failure<PagedResult<EventBrowseCardResponse>>(userResult.Error);
         }
 
         var page = Math.Max(1, query.Page);
@@ -30,36 +39,27 @@ internal sealed class BrowseEventsQueryHandler(
             1,
             EventDiscoveryConstants.MaxPageSize);
 
-        var utcNow = DateTime.UtcNow;
+        var subscriptions = await context.UserSubscriptions
+            .AsNoTracking()
+            .Where(s => s.UserId == userResult.Value.Id)
+            .ToListAsync(cancellationToken);
 
-        IReadOnlySet<Guid>? expandedCategoryIds = null;
-        if (query.CategoryId is { Length: > 0 })
+        if (subscriptions.Count == 0)
         {
-            expandedCategoryIds = await EventCategoryExpansionService.ExpandCategoryIdsAsync(
-                context,
-                query.CategoryId,
-                cancellationToken);
+            return new PagedResult<EventBrowseCardResponse>([], page, pageSize, 0);
         }
 
-        var normalizedCities = query.City is { Length: > 0 }
-            ? EventDiscoveryQueryService.NormalizePlaceValues(query.City)
-            : null;
-
-        var normalizedCountries = query.Country is { Length: > 0 }
-            ? EventDiscoveryQueryService.NormalizePlaceValues(query.Country)
-            : null;
-
-        var criteria = new EventDiscoveryCriteria(
+        var utcNow = DateTime.UtcNow;
+        var criteria = await SubscriptionFeedCriteriaService.ResolveAsync(
+            context,
+            subscriptions,
             utcNow,
-            expandedCategoryIds,
-            query.StartFrom,
-            query.StartTo,
-            query.LocationType,
-            query.Tier,
-            query.AdmissionType,
-            normalizedCities is { Count: > 0 } ? normalizedCities : null,
-            normalizedCountries is { Count: > 0 } ? normalizedCountries : null,
-            query.Q);
+            cancellationToken);
+
+        if (criteria is null)
+        {
+            return new PagedResult<EventBrowseCardResponse>([], page, pageSize, 0);
+        }
 
         var filteredQuery = EventDiscoveryQueryService.Apply(
             context.Events.AsNoTracking(),

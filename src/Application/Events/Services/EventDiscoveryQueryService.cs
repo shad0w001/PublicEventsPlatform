@@ -53,12 +53,19 @@ internal static class EventDiscoveryQueryService
                 e.AdmissionType != null && admissionTypes.Contains(e.AdmissionType.Value));
         }
 
-        if (criteria.NormalizedCities is { Count: > 0 } cities)
+        var hasCityFilter = criteria.NormalizedCities is { Count: > 0 };
+        var hasOnlineFeedFilter = criteria.IncludeVirtualSegmentForLocationMatch;
+
+        if (hasCityFilter || hasOnlineFeedFilter)
         {
-            query = query.Where(e => e.Locations.Any(l =>
-                l.Kind == EventLocationKind.Physical &&
-                l.City != null &&
-                cities.Contains(l.City.ToLower().Trim())));
+            query = query.Where(e =>
+                (hasCityFilter &&
+                 e.Locations.Any(l =>
+                     l.Kind == EventLocationKind.Physical &&
+                     l.City != null &&
+                     criteria.NormalizedCities!.Contains(l.City.ToLower().Trim()))) ||
+                (hasOnlineFeedFilter &&
+                 e.Locations.Any(l => l.Kind == EventLocationKind.Virtual)));
         }
 
         if (criteria.NormalizedCountries is { Count: > 0 } countries)

@@ -12,4 +12,5 @@ internal sealed record EventDiscoveryCriteria(
     IReadOnlyList<AdmissionType>? AdmissionTypes,
     IReadOnlyList<string>? NormalizedCities,
     IReadOnlyList<string>? NormalizedCountries,
-    string? Query);
+    string? Query,
+    bool IncludeVirtualSegmentForLocationMatch = false);
