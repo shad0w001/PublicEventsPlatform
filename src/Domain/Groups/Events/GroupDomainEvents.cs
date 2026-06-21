@@ -27,3 +27,7 @@ public sealed record GroupJoinApplicationApproved(Guid GroupId, Guid Application
 public sealed record GroupJoinApplicationRejected(Guid GroupId, Guid ApplicationId, Guid UserId) : DomainEvent;
 
 public sealed record GroupJoinApplicationCancelled(Guid GroupId, Guid ApplicationId, Guid UserId) : DomainEvent;
+
+public sealed record GroupVerificationApplicationApproved(Guid GroupId, Guid ApplicationId) : DomainEvent;
+
+public sealed record GroupVerificationApplicationRejected(Guid GroupId, Guid ApplicationId) : DomainEvent;

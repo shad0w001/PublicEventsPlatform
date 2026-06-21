@@ -136,7 +136,7 @@ public class EventModelTests
                 ServiceRole.User);
             context.Users.Add(buyer);
 
-            var createResult = EventService.Create(EventTier.Small, "Paid Attendance", buyer.Id);
+            var createResult = EventService.Create(EventTier.Small, "Paid Attendance", buyer.Id, "/images/default-event-banner.png");
             var @event = createResult.Value.Event;
 
             EventService.Update(
@@ -170,7 +170,7 @@ public class EventModelTests
         // Arrange
         var databaseName = Guid.NewGuid().ToString();
         var hostParticipantId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        var createResult = EventService.Create(EventTier.Small, "Persisted Event", hostParticipantId);
+        var createResult = EventService.Create(EventTier.Small, "Persisted Event", hostParticipantId, "/images/default-event-banner.png");
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

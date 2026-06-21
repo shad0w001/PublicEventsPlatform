@@ -1,6 +1,7 @@
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Application.Abstractions.Pagination;
+using Application.Abstractions.Search;
 using Application.Events.Services;
 using Domain.Events;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,9 @@ namespace Application.Events.BrowseEvents;
 
 internal sealed class BrowseEventsQueryHandler(
     IApplicationDbContext context,
-    EventAccessService eventAccessService)
+    EventAccessService eventAccessService,
+    IEmbeddingGenerator embeddingGenerator,
+    IEventSemanticBrowseRerankService semanticBrowseRerankService)
     : IQueryHandler<BrowseEventsQuery, PagedResult<EventBrowseCardResponse>>
 {
     public async Task<Result<PagedResult<EventBrowseCardResponse>>> Handle(
@@ -49,6 +52,8 @@ internal sealed class BrowseEventsQueryHandler(
             ? EventDiscoveryQueryService.NormalizePlaceValues(query.Country)
             : null;
 
+        var hasSemanticQuery = !string.IsNullOrWhiteSpace(query.Query);
+
         var criteria = new EventDiscoveryCriteria(
             utcNow,
             expandedCategoryIds,
@@ -59,21 +64,40 @@ internal sealed class BrowseEventsQueryHandler(
             query.AdmissionType,
             normalizedCities is { Count: > 0 } ? normalizedCities : null,
             normalizedCountries is { Count: > 0 } ? normalizedCountries : null,
-            query.Q);
+            query.Query);
 
         var filteredQuery = EventDiscoveryQueryService.Apply(
             context.Events.AsNoTracking(),
-            criteria);
+            criteria,
+            applyTextContainsFilter: !hasSemanticQuery);
 
         var totalCount = await filteredQuery.CountAsync(cancellationToken);
 
-        var events = await filteredQuery
-            .Include(e => e.Organizers)
-            .Include(e => e.Category)
-            .OrderBy(e => e.StartTime)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        List<Event> events;
+        if (!hasSemanticQuery)
+        {
+            events = await filteredQuery
+                .Include(e => e.Organizers)
+                .Include(e => e.Category)
+                .OrderBy(e => e.StartTime)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+        }
+        else
+        {
+            var queryEmbedding = await embeddingGenerator.GenerateAsync(
+                query.Query!.Trim(),
+                cancellationToken);
+
+            events = await semanticBrowseRerankService.GetBrowsePageAsync(
+                filteredQuery,
+                query.Query!,
+                queryEmbedding,
+                (page - 1) * pageSize,
+                pageSize,
+                cancellationToken);
+        }
 
         var hostParticipantIds = events
             .Select(e => eventAccessService.GetHostParticipantId(e))

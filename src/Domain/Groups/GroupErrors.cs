@@ -83,4 +83,24 @@ public static class GroupErrors
     public static readonly Error CannotDemoteSelf = Error.Forbidden(
         "Groups.CannotDemoteSelf",
         "You cannot demote your own role");
+
+    public static readonly Error AlreadyVerified = Error.Conflict(
+        "Groups.AlreadyVerified",
+        "This organization is already verified");
+
+    public static readonly Error VerificationPendingApplicationExists = Error.Conflict(
+        "Groups.VerificationPendingApplicationExists",
+        "A pending verification application already exists for this organization");
+
+    public static readonly Error VerificationReapplyCooldownActive = Error.Conflict(
+        "Groups.VerificationReapplyCooldownActive",
+        "You must wait before submitting another verification application");
+
+    public static readonly Error InsufficientVerifiedMembers = Error.Conflict(
+        "Groups.InsufficientVerifiedMembers",
+        $"At least {GroupVerificationConstants.MinVerifiedMembers} members with verified email are required to apply for verification");
+
+    public static readonly Error InsufficientCompletedEvents = Error.Conflict(
+        "Groups.InsufficientCompletedEvents",
+        $"At least {GroupVerificationConstants.MinCompletedEvents} completed published events are required to apply for verification");
 }

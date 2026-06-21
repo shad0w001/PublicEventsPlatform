@@ -14,6 +14,8 @@ internal static class EventBrowseCardMapper
             {
                 var hostParticipantId = eventAccessService.GetHostParticipantId(e);
                 var hostIsGroup = hostDisplayNames.GroupHostIds.Contains(hostParticipantId);
+                var hostIsVerified = hostIsGroup &&
+                                     hostDisplayNames.VerifiedGroupHostIds.Contains(hostParticipantId);
                 return new EventBrowseCardResponse(
                     e.Id,
                     e.Title,
@@ -27,7 +29,8 @@ internal static class EventBrowseCardMapper
                     e.CategoryId,
                     e.Category?.Name,
                     hostDisplayNames.Names.GetValueOrDefault(hostParticipantId, "Host"),
-                    hostIsGroup);
+                    hostIsGroup,
+                    hostIsVerified);
             })
             .ToList();
 }

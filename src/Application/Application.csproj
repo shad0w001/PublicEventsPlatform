@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ApplicationTests" />
+    <InternalsVisibleTo Include="Infrastructure" />
   </ItemGroup>
 
 </Project>

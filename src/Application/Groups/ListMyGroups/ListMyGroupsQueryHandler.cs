@@ -43,6 +43,7 @@ internal sealed class ListMyGroupsQueryHandler(
                     group.ProfileImageUrl,
                     group.JoinPolicy,
                     group.GroupMemberships.Count,
+                    group.IsVerified,
                     membership.Role,
                     membership.JoinedAt))
             .ToListAsync(cancellationToken);

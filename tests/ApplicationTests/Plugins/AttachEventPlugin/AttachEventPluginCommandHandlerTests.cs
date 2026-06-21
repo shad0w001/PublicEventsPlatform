@@ -17,6 +17,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Plugins.AttachEventPlugin;
 
+using ApplicationTests.Events;
+
 public class AttachEventPluginCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -246,7 +248,7 @@ public class AttachEventPluginCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Big, "Big Draft", user.Id);
+        var createResult = EventService.Create(EventTier.Big, "Big Draft", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -265,7 +267,7 @@ public class AttachEventPluginCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Small Draft", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Small Draft", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -284,7 +286,7 @@ public class AttachEventPluginCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Big, "Cancelled Big", user.Id);
+        var createResult = EventService.Create(EventTier.Big, "Cancelled Big", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

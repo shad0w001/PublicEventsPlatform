@@ -10,4 +10,5 @@ public sealed record PublicGroupResponse(
     string ProfileImageUrl,
     DateTime CreatedAt,
     int MemberCount,
+    bool IsVerified,
     GroupMemberRole? MyRole);

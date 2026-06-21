@@ -17,6 +17,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Events.SetEventRsvp;
 
+using ApplicationTests.Events;
+
 public class SetEventRsvpCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -265,7 +267,7 @@ public class SetEventRsvpCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "RSVP Test Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "RSVP Test Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -301,7 +303,7 @@ public class SetEventRsvpCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Draft RSVP Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Draft RSVP Event", user.Id, EventTestConstants.DefaultBannerUrl);
         context.Events.Add(createResult.Value.Event);
         context.EventOrganizers.Add(createResult.Value.Organizer);
         await context.SaveChangesAsync(CancellationToken.None);

@@ -16,6 +16,8 @@ internal static class DomainEventTopicMapper
         [typeof(GroupJoinApplicationSubmitted)] = "domain.group-join-application-submitted",
         [typeof(GroupJoinApplicationApproved)] = "domain.group-join-application-approved",
         [typeof(GroupJoinApplicationRejected)] = "domain.group-join-application-rejected",
+        [typeof(GroupVerificationApplicationApproved)] = "domain.group-verification-application-approved",
+        [typeof(GroupVerificationApplicationRejected)] = "domain.group-verification-application-rejected",
         [typeof(EventPublished)] = "domain.event-published",
         [typeof(EventUpdated)] = "domain.event-updated"
     };

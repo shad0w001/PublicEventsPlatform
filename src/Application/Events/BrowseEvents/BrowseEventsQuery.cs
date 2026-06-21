@@ -13,6 +13,6 @@ public sealed record BrowseEventsQuery(
     AdmissionType[]? AdmissionType = null,
     string[]? City = null,
     string[]? Country = null,
-    string? Q = null,
+    string? Query = null,
     int Page = 1,
     int PageSize = EventDiscoveryConstants.DefaultPageSize) : IQuery<PagedResult<EventBrowseCardResponse>>;

@@ -62,6 +62,21 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
+    public void GroupMembershipModel_Should_NotContainShadowUserId1_When_ApplicationDbContextModelIsBuilt()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act
+        var entityType = context.Model.FindEntityType(typeof(GroupMembership));
+        var shadowProperty = entityType?.FindProperty("UserId1");
+
+        // Assert
+        Assert.NotNull(entityType);
+        Assert.Null(shadowProperty);
+    }
+
+    [Fact]
     public void GroupJoinApplicationModel_Should_NotContainShadowGroupId1_When_ApplicationDbContextModelIsBuilt()
     {
         // Arrange
@@ -170,7 +185,7 @@ public class ApplicationDbContextTests
             ServiceRole.User);
         user.Username = "testuser";
 
-        var createResult = EventService.Create(EventTier.Small, "Test Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Test Event", user.Id, "/images/default-event-banner.png");
         var evt = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

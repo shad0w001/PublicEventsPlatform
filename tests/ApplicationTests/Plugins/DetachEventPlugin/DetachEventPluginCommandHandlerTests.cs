@@ -15,6 +15,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Plugins.DetachEventPlugin;
 
+using ApplicationTests.Events;
+
 public class DetachEventPluginCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -93,7 +95,7 @@ public class DetachEventPluginCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Big, "Big Draft", user.Id);
+        var createResult = EventService.Create(EventTier.Big, "Big Draft", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

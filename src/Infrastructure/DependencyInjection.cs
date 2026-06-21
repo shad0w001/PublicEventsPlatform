@@ -3,12 +3,15 @@ using Application.Abstractions.Data;
 using Application.Abstractions.Media;
 using Application.Abstractions.Notifications;
 using Application.Abstractions.Payments;
+using Application.Abstractions.Search;
+using Application.Search;
 using Infrastructure.Authentication;
 using Infrastructure.Database;
 using Infrastructure.Media;
 using Infrastructure.Messaging;
 using Infrastructure.Notifications;
 using Infrastructure.Payments;
+using Infrastructure.Search;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -23,7 +26,9 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(
+                configuration.GetConnectionString("DefaultConnection"),
+                npgsqlOptions => npgsqlOptions.UseVector()));
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
@@ -47,6 +52,9 @@ public static class DependencyInjection
         services.AddScoped<ISmtpClient, MailKitSmtpClient>();
 
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
+        services.Configure<EmbeddingsOptions>(configuration.GetSection(EmbeddingsOptions.SectionName));
+        services.AddHttpClient<IEmbeddingGenerator, GeminiEmbeddingGenerator>();
+        services.AddScoped<IEventSemanticBrowseRerankService, EventSemanticBrowseRerankService>();
         services.AddSingleton<IKafkaProducer, KafkaProducer>();
         services.AddScoped<OutboxPublishingService>();
         services.AddScoped<ConsumerIdempotencyService>();

@@ -21,6 +21,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Events.UpdateEvent;
 
+using ApplicationTests.Events;
+
 public class UpdateEventCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -856,7 +858,7 @@ public class UpdateEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Free With RSVP", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Free With RSVP", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);
@@ -885,7 +887,7 @@ public class UpdateEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Paid Draft", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Paid Draft", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         @event.AdmissionType = AdmissionType.Paid;
@@ -908,7 +910,7 @@ public class UpdateEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Paid With Sales", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Paid With Sales", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         @event.AdmissionType = AdmissionType.Paid;
@@ -932,7 +934,7 @@ public class UpdateEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Big, "Big With Plugin", user.Id);
+        var createResult = EventService.Create(EventTier.Big, "Big With Plugin", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -971,7 +973,7 @@ public class UpdateEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, title, user.Id);
+        var createResult = EventService.Create(EventTier.Small, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -999,7 +1001,7 @@ public class UpdateEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         await currentUserService.GetOrProvisionAsync(CancellationToken.None);
 
-        var createResult = EventService.Create(EventTier.Small, title, hostParticipantId);
+        var createResult = EventService.Create(EventTier.Small, title, hostParticipantId, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -1025,7 +1027,7 @@ public class UpdateEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, title, user.Id);
+        var createResult = EventService.Create(EventTier.Small, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -1076,7 +1078,7 @@ public class UpdateEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Published Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Published Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

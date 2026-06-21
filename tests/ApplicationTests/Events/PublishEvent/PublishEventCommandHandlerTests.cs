@@ -19,6 +19,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Events.PublishEvent;
 
+using ApplicationTests.Events;
+
 public class PublishEventCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -486,7 +488,7 @@ public class PublishEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, title, user.Id);
+        var createResult = EventService.Create(EventTier.Small, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -520,7 +522,7 @@ public class PublishEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Bad Segment Publish", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Bad Segment Publish", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -548,7 +550,7 @@ public class PublishEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, title, hostParticipantId);
+        var createResult = EventService.Create(EventTier.Small, title, hostParticipantId, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -578,7 +580,7 @@ public class PublishEventCommandHandlerTests
 
         for (var i = 0; i < count; i++)
         {
-            var createResult = EventService.Create(EventTier.Small, $"Prior Event {i}", user.Id);
+            var createResult = EventService.Create(EventTier.Small, $"Prior Event {i}", user.Id, EventTestConstants.DefaultBannerUrl);
             var @event = createResult.Value.Event;
             var organizer = createResult.Value.Organizer;
 
@@ -613,7 +615,7 @@ public class PublishEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, title, user.Id);
+        var createResult = EventService.Create(EventTier.Small, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -634,7 +636,7 @@ public class PublishEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Virtual Only", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Virtual Only", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -684,7 +686,7 @@ public class PublishEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Already Published", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Already Published", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

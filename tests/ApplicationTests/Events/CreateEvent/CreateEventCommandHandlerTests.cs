@@ -1,4 +1,5 @@
 using Application.Abstractions.Authentication;
+using Application.Events;
 using Application.Events.CreateEvent;
 using Application.Events.Services;
 using Application.Users;
@@ -18,6 +19,7 @@ public class CreateEventCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
     private const string DefaultGroupImageUrl = "/images/default-group.png";
+    private const string DefaultBannerUrl = "/images/default-event-banner.png";
 
     [Fact]
     public async Task CreateEventCommandHandler_Should_CreateDraftWithSelfHost_When_HostIdIsOmitted()
@@ -48,6 +50,7 @@ public class CreateEventCommandHandlerTests
         Assert.Equal(user.Id, organizer.ParticipantId);
         Assert.Equal(user.Id, result.Value.HostParticipantId);
         Assert.Null(persistedEvent.CreatedByUserId);
+        Assert.Equal(DefaultBannerUrl, persistedEvent.BannerImageUrl);
     }
 
     [Fact]
@@ -315,7 +318,8 @@ public class CreateEventCommandHandlerTests
             context,
             currentUserService,
             identity,
-            new EventAccessService(context));
+            new EventAccessService(context),
+            Options.Create(new EventOptions { DefaultBannerUrl = DefaultBannerUrl }));
     }
 
     private static ApplicationDbContext CreateContext(string databaseName)

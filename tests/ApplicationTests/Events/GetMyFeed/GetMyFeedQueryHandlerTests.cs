@@ -15,6 +15,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Events.GetMyFeed;
 
+using ApplicationTests.Events;
+
 public class GetMyFeedQueryHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -593,7 +595,7 @@ public class GetMyFeedQueryHandlerTests
         string? bannerUrl = null)
     {
         await using var context = CreateContext(databaseName);
-        var createResult = EventService.Create(tier, title, user.Id);
+        var createResult = EventService.Create(tier, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using Pgvector;
 
 #nullable disable
 
@@ -21,6 +22,7 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "vector");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Domain.Events.Event", b =>
@@ -222,6 +224,45 @@ namespace Infrastructure.Migrations
                     b.ToTable("group_memberships", "public");
                 });
 
+            modelBuilder.Entity("Domain.Groups.GroupVerificationApplication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.ToTable("group_verification_applications", "public");
+                });
+
             modelBuilder.Entity("Domain.Participants.Participant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -328,6 +369,23 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("plugin_usages", "public");
+                });
+
+            modelBuilder.Entity("Domain.Search.EventEmbedding", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Vector>("Embedding")
+                        .IsRequired()
+                        .HasColumnType("vector(1536)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("event_embeddings", "public");
                 });
 
             modelBuilder.Entity("Domain.Subscriptions.UserSubscription", b =>
@@ -621,6 +679,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasDefaultValue("");
 
+                    b.Property<bool>("IsVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("JoinPolicy")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -636,6 +699,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.ToTable("groups", "public");
                 });
@@ -853,6 +919,25 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Groups.GroupVerificationApplication", b =>
+                {
+                    b.HasOne("Domain.Groups.Group", "Group")
+                        .WithMany("VerificationApplications")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Users.User", "SubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("SubmittedByUser");
+                });
+
             modelBuilder.Entity("Domain.Plugins.PluginData", b =>
                 {
                     b.HasOne("Domain.Plugins.PluginUsage", "PluginUsage")
@@ -881,6 +966,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("Plugin");
+                });
+
+            modelBuilder.Entity("Domain.Search.EventEmbedding", b =>
+                {
+                    b.HasOne("Domain.Events.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
                 });
 
             modelBuilder.Entity("Domain.Subscriptions.UserSubscription", b =>
@@ -1075,6 +1171,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("GroupMemberships");
 
                     b.Navigation("JoinApplications");
+
+                    b.Navigation("VerificationApplications");
                 });
 
             modelBuilder.Entity("Domain.Users.User", b =>

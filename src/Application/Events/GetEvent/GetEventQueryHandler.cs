@@ -160,9 +160,14 @@ internal sealed class GetEventQueryHandler(
 
         var hostParticipantId = eventAccessService.GetHostParticipantId(@event);
 
-        var hostIsGroup = await context.Groups
+        var hostGroup = await context.Groups
             .AsNoTracking()
-            .AnyAsync(g => g.Id == hostParticipantId, cancellationToken);
+            .Where(g => g.Id == hostParticipantId)
+            .Select(g => new { g.Id, g.IsVerified })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var hostIsGroup = hostGroup is not null;
+        var hostIsVerified = hostGroup?.IsVerified ?? false;
 
         var hostDisplayName = await EventHostDisplayNameLookup.ResolveAsync(
             context,
@@ -182,6 +187,7 @@ internal sealed class GetEventQueryHandler(
             @event,
             hostDisplayName,
             hostIsGroup,
+            hostIsVerified,
             categoryName,
             plugins,
             publicRsvpSummary);

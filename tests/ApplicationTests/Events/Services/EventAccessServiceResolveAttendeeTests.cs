@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApplicationTests.Events.Services;
 
+using ApplicationTests.Events;
+
 public class EventAccessServiceResolveAttendeeTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -275,7 +277,7 @@ public class EventAccessServiceResolveAttendeeTests
 
     private static async Task<(Guid EventId, Guid AttendeeId)> SeedPublishedEventWithAttendeeAsync(string databaseName, User user)
     {
-        var createResult = EventService.Create(EventTier.Small, "RSVP Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "RSVP Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         @event.Description = "Description";
         @event.CategoryId = Guid.Parse("11111111-1111-1111-1111-111111111111");

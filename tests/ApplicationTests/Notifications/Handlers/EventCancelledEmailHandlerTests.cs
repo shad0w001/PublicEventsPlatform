@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ApplicationTests.Notifications.Handlers;
 
+using ApplicationTests.Events;
+
 public class EventCancelledEmailHandlerTests
 {
     [Fact]
@@ -161,7 +163,7 @@ public class EventCancelledEmailHandlerTests
         Guid buyerParticipantId,
         User? userToSeed = null)
     {
-        var createResult = EventService.Create(EventTier.Small, "Paid Concert", buyerParticipantId);
+        var createResult = EventService.Create(EventTier.Small, "Paid Concert", buyerParticipantId, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         @event.Description = "Description";
         @event.CategoryId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -212,7 +214,7 @@ public class EventCancelledEmailHandlerTests
         IReadOnlyList<(Guid ParticipantId, EventAttendeeStatus Status)> attendees,
         IReadOnlyList<User>? additionalUsers = null)
     {
-        var createResult = EventService.Create(EventTier.Small, "Community Meetup", hostUser.Id);
+        var createResult = EventService.Create(EventTier.Small, "Community Meetup", hostUser.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         @event.Description = "Description";
         @event.CategoryId = Guid.Parse("11111111-1111-1111-1111-111111111111");

@@ -15,9 +15,10 @@ internal static class EventTestData
     internal static readonly DateTime DefaultEventEnd = new(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc);
 
     internal const string DefaultTitle = "Test Event";
+    internal const string DefaultBannerUrl = "/images/default-event-banner.png";
 
     internal static (Event Event, EventOrganizer Organizer) CreateDraft(EventTier tier = EventTier.Small) =>
-        EventService.Create(tier, DefaultTitle, HostParticipantId).Value;
+        EventService.Create(tier, DefaultTitle, HostParticipantId, DefaultBannerUrl).Value;
 
     internal static void MakePublishReady(Event @event)
     {

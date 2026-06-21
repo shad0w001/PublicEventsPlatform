@@ -88,19 +88,19 @@ public sealed class EventsController(
         Summary = "Browse published events",
         Description = """
             Anonymous access. Returns paginated event cards for published future events only (excludes draft, cancelled, and soft-deleted).
-            Default sort: startTime ascending. Default page size 30 (max 30).
+            Default sort: startTime ascending when query is omitted. Default page size 30 (max 30). When query is provided, structural filters apply first, then semantic cosine rerank (similarity descending, then startTime ascending); totalCount reflects structural matches only.
             Multi-value filters: repeat query params or comma-separated values — OR within each dimension, AND across dimensions.
             categoryId includes events tagged with the category or any descendant subcategory.
             city/country match any physical location segment (normalized case-insensitive).
-            q performs case-insensitive text search on title, description, location type, location cities, and category name.
+            query performs semantic rerank on the structurally filtered set; without query, optional case-insensitive Contains search on title, description, location type, location cities, and category name applies when query is empty.
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "Paginated browse results", typeof(PagedResult<EventBrowseCardResponse>))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid date range", typeof(ProblemDetails))]
     public async Task<IActionResult> Browse(
-        [FromQuery] BrowseEventsQuery query,
+        [FromQuery] BrowseEventsQuery browseQuery,
         CancellationToken cancellationToken)
     {
-        var result = await browseEventsHandler.Handle(query, cancellationToken);
+        var result = await browseEventsHandler.Handle(browseQuery, cancellationToken);
         return result.ToActionResult();
     }
 

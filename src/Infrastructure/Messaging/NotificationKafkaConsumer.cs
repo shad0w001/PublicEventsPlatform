@@ -160,6 +160,16 @@ internal sealed class NotificationKafkaConsumer(
                     .GetRequiredService<IGroupJoinApplicationRejectedEmailHandler>()
                     .HandleAsync(DomainEventPayloadDeserializer.DeserializeGroupJoinApplicationRejected(payload), cancellationToken);
                 break;
+            case NotificationConsumerTopics.GroupVerificationApplicationApproved:
+                await serviceProvider
+                    .GetRequiredService<IGroupVerificationApplicationApprovedEmailHandler>()
+                    .HandleAsync(DomainEventPayloadDeserializer.DeserializeGroupVerificationApplicationApproved(payload), cancellationToken);
+                break;
+            case NotificationConsumerTopics.GroupVerificationApplicationRejected:
+                await serviceProvider
+                    .GetRequiredService<IGroupVerificationApplicationRejectedEmailHandler>()
+                    .HandleAsync(DomainEventPayloadDeserializer.DeserializeGroupVerificationApplicationRejected(payload), cancellationToken);
+                break;
             default:
                 throw new InvalidOperationException($"Unhandled notification topic: {topic}");
         }
@@ -173,6 +183,8 @@ internal sealed class NotificationKafkaConsumer(
         NotificationConsumerTopics.GroupJoinApplicationSubmitted => NotificationConsumerNames.GroupJoinApplicationSubmitted,
         NotificationConsumerTopics.GroupJoinApplicationApproved => NotificationConsumerNames.GroupJoinApplicationApproved,
         NotificationConsumerTopics.GroupJoinApplicationRejected => NotificationConsumerNames.GroupJoinApplicationRejected,
+        NotificationConsumerTopics.GroupVerificationApplicationApproved => NotificationConsumerNames.GroupVerificationApplicationApproved,
+        NotificationConsumerTopics.GroupVerificationApplicationRejected => NotificationConsumerNames.GroupVerificationApplicationRejected,
         _ => null
     };
 }

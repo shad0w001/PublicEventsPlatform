@@ -2,7 +2,7 @@ using Domain.Events.Events;
 
 namespace Application.Abstractions.Search;
 
-public interface IEventPublishedEmbeddingStubHandler
+public interface IEventPublishedEmbeddingHandler
 {
     Task HandleAsync(EventPublished domainEvent, CancellationToken cancellationToken = default);
 }

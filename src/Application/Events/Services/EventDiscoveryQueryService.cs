@@ -14,7 +14,10 @@ internal static class EventDiscoveryQueryService
             .Distinct()
             .ToList();
 
-    public static IQueryable<Event> Apply(IQueryable<Event> query, EventDiscoveryCriteria criteria)
+    public static IQueryable<Event> Apply(
+        IQueryable<Event> query,
+        EventDiscoveryCriteria criteria,
+        bool applyTextContainsFilter = true)
     {
         query = query.Where(e =>
             e.DeletedAt == null &&
@@ -76,18 +79,9 @@ internal static class EventDiscoveryQueryService
                 countries.Contains(l.Country)));
         }
 
-        if (!string.IsNullOrWhiteSpace(criteria.Query))
+        if (applyTextContainsFilter && !string.IsNullOrWhiteSpace(criteria.Query))
         {
-            var term = criteria.Query.Trim().ToLower();
-            query = query.Where(e =>
-                e.Title.ToLower().Contains(term) ||
-                e.Description.ToLower().Contains(term) ||
-                e.LocationType.ToString().ToLower().Contains(term) ||
-                e.Locations.Any(l =>
-                    l.Kind == EventLocationKind.Physical &&
-                    l.City != null &&
-                    l.City.Contains(term)) ||
-                (e.Category != null && e.Category.Name.ToLower().Contains(term)));
+            query = EventTextSearchHelper.ApplyContainsFilter(query, criteria.Query);
         }
 
         return query;

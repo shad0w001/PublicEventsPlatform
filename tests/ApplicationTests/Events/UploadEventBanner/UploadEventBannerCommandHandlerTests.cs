@@ -15,6 +15,8 @@ using SharedKernel;
 
 namespace ApplicationTests.Events.UploadEventBanner;
 
+using ApplicationTests.Events;
+
 public class UploadEventBannerCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -104,7 +106,7 @@ public class UploadEventBannerCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Banner Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Banner Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -125,7 +127,7 @@ public class UploadEventBannerCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Deleted Banner Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Deleted Banner Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         EventService.SoftDelete(@event);

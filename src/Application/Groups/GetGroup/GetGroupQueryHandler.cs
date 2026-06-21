@@ -29,6 +29,7 @@ internal sealed class GetGroupQueryHandler(
                 g.JoinPolicy,
                 g.ProfileImageUrl,
                 g.CreatedAt,
+                g.IsVerified,
                 g.DeletedAt,
                 MemberCount = g.GroupMemberships.Count
             })
@@ -67,6 +68,7 @@ internal sealed class GetGroupQueryHandler(
             group.ProfileImageUrl,
             group.CreatedAt,
             group.MemberCount,
+            group.IsVerified,
             myRole);
     }
 }

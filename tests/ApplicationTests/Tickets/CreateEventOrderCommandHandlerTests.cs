@@ -22,6 +22,8 @@ using SharedKernel;
 
 namespace ApplicationTests.Tickets;
 
+using ApplicationTests.Events;
+
 public class CreateEventOrderCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -215,7 +217,7 @@ public class CreateEventOrderCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Paid Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Paid Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);
@@ -280,7 +282,7 @@ public class CreateEventOrderCommandHandlerTests
         var group = groupCreateResult.Value.Group;
         var memberMembership = GroupMembership.Create(group.Id, member.Id, GroupMemberRole.Member);
 
-        var createResult = EventService.Create(EventTier.Small, "Paid Event", owner.Id);
+        var createResult = EventService.Create(EventTier.Small, "Paid Event", owner.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);

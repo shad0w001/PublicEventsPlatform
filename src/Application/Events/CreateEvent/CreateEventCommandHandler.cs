@@ -4,6 +4,7 @@ using Application.Abstractions.Messaging;
 using Application.Events.Services;
 using Application.Users.Services;
 using Domain.Events.Services;
+using Microsoft.Extensions.Options;
 using SharedKernel;
 
 namespace Application.Events.CreateEvent;
@@ -12,7 +13,8 @@ internal sealed class CreateEventCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUserService,
     IUserIdentityAccessor identityAccessor,
-    EventAccessService eventAccessService)
+    EventAccessService eventAccessService,
+    IOptions<EventOptions> eventOptions)
     : ICommandHandler<CreateEventCommand, EventSummaryResponse>
 {
     public async Task<Result<EventSummaryResponse>> Handle(
@@ -46,7 +48,8 @@ internal sealed class CreateEventCommandHandler(
         var createResult = EventService.Create(
             command.Tier,
             command.Title,
-            host.HostParticipantId);
+            host.HostParticipantId,
+            eventOptions.Value.DefaultBannerUrl);
 
         if (createResult.IsFailure)
         {

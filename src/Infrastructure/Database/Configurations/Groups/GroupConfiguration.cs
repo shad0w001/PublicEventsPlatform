@@ -29,5 +29,11 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
             .HasDefaultValue(GroupJoinPolicy.Open);
 
         builder.Property(g => g.DeletedAt);
+
+        builder.Property(g => g.IsVerified)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(g => g.VerifiedAt);
     }
 }

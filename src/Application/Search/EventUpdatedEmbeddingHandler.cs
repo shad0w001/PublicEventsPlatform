@@ -1,15 +1,17 @@
 using Application.Abstractions.Data;
 using Application.Abstractions.Search;
+using Application.Search.Services;
 using Domain.Events;
 using Domain.Events.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Search.Stubs;
+namespace Application.Search;
 
-internal sealed class EventUpdatedEmbeddingStubHandler(
+internal sealed class EventUpdatedEmbeddingHandler(
     IApplicationDbContext context,
-    ILogger<EventUpdatedEmbeddingStubHandler> logger) : IEventUpdatedEmbeddingStubHandler
+    IEventEmbeddingIndexService indexService,
+    ILogger<EventUpdatedEmbeddingHandler> logger) : IEventUpdatedEmbeddingHandler
 {
     public async Task HandleAsync(
         EventUpdated domainEvent,
@@ -26,13 +28,11 @@ internal sealed class EventUpdatedEmbeddingStubHandler(
         if (!isPublished)
         {
             logger.LogDebug(
-                "Skipping embedding indexer stub for event {EventId}: not published, deleted, or missing",
+                "Skipping embedding indexer for event {EventId}: not published, deleted, or missing",
                 domainEvent.EventId);
             return;
         }
 
-        logger.LogInformation(
-            "Embedding indexer stub (Phase 9): event {EventId} updated",
-            domainEvent.EventId);
+        await indexService.UpsertAsync(domainEvent.EventId, cancellationToken);
     }
 }
