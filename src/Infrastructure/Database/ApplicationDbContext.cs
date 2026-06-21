@@ -3,6 +3,7 @@ using Domain.Events;
 using Domain.Groups;
 using Domain.Participants;
 using Domain.Plugins;
+using Domain.Subscriptions;
 using Domain.Tickets;
 using Domain.Users;
 using Infrastructure.DomainEvents;
@@ -29,6 +30,7 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
         public DbSet<Ticket> Tickets => Set<Ticket>();
         public DbSet<TicketCode> TicketCodes => Set<TicketCode>();
         public DbSet<TicketValidation> TicketValidations => Set<TicketValidation>();
+        public DbSet<UserSubscription> UserSubscriptions => Set<UserSubscription>();
         internal DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
         internal DbSet<ProcessedMessage> ProcessedMessages => Set<ProcessedMessage>();
 

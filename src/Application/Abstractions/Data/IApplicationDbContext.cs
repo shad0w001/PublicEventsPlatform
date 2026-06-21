@@ -1,6 +1,7 @@
 using Domain.Events;
 using Domain.Groups;
 using Domain.Plugins;
+using Domain.Subscriptions;
 using Domain.Tickets;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,7 @@ public interface IApplicationDbContext
     DbSet<Ticket> Tickets { get; }
     DbSet<TicketCode> TicketCodes { get; }
     DbSet<TicketValidation> TicketValidations { get; }
+    DbSet<UserSubscription> UserSubscriptions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
