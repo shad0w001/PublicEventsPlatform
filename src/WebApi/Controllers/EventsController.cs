@@ -97,10 +97,10 @@ public sealed class EventsController(
     [SwaggerResponse(StatusCodes.Status200OK, "Paginated browse results", typeof(PagedResult<EventBrowseCardResponse>))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid date range", typeof(ProblemDetails))]
     public async Task<IActionResult> Browse(
-        [FromQuery] BrowseEventsQuery query,
+        [FromQuery] BrowseEventsQuery browseQuery,
         CancellationToken cancellationToken)
     {
-        var result = await browseEventsHandler.Handle(query, cancellationToken);
+        var result = await browseEventsHandler.Handle(browseQuery, cancellationToken);
         return result.ToActionResult();
     }
 
