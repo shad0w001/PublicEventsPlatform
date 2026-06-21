@@ -377,6 +377,126 @@ public class GetMyFeedQueryHandlerTests
     }
 
     [Fact]
+    public async Task GetMyFeedQueryHandler_Should_RequireCityOnlineAndCategory_When_AllThreeSubscriptionKindsExist()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|feed-all", "feed-all@example.com");
+        var user = SeedUser(databaseName);
+        var musicId = SeedCategory(databaseName, "Music");
+        var sportsId = SeedCategory(databaseName, "Sports");
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "Sofia Hybrid Music",
+            FutureStart,
+            FutureEnd,
+            categoryId: musicId,
+            city: "Sofia",
+            locations:
+            [
+                new EventLocation
+                {
+                    Name = "Venue",
+                    Kind = EventLocationKind.Physical,
+                    Address = "1 Main St",
+                    City = "Sofia"
+                },
+                new EventLocation
+                {
+                    Name = "Stream",
+                    Kind = EventLocationKind.Virtual,
+                    Url = "https://stream.example/live"
+                }
+            ]);
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "Sofia Sports Only",
+            FutureStart,
+            FutureEnd,
+            categoryId: sportsId,
+            city: "Sofia");
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "Berlin Virtual Sports",
+            FutureStart,
+            FutureEnd,
+            categoryId: sportsId,
+            locations:
+            [
+                new EventLocation
+                {
+                    Name = "Stream",
+                    Kind = EventLocationKind.Virtual,
+                    Url = "https://stream.example/remote"
+                }
+            ]);
+
+        await using var seedContext = CreateContext(databaseName);
+        var subscriber = await ProvisionUserAsync(seedContext, identity);
+        seedContext.UserSubscriptions.Add(
+            UserSubscription.Create(subscriber.Id, SubscriptionKind.City, "sofia", null));
+        seedContext.UserSubscriptions.Add(
+            UserSubscription.Create(subscriber.Id, SubscriptionKind.Online, null, null));
+        seedContext.UserSubscriptions.Add(
+            UserSubscription.Create(subscriber.Id, SubscriptionKind.Category, null, musicId));
+        await seedContext.SaveChangesAsync(CancellationToken.None);
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new GetMyFeedQuery(), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value.Items);
+        Assert.Equal("Sofia Hybrid Music", result.Value.Items[0].Title);
+    }
+
+    [Fact]
+    public async Task GetMyFeedQueryHandler_Should_MatchNormalizedCity_When_EventCityHasExtraWhitespace()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var identity = CreateVerifiedIdentity("auth0|feed-city-norm", "feed-city-norm@example.com");
+        var user = SeedUser(databaseName);
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "New York Meetup",
+            FutureStart,
+            FutureEnd,
+            city: "New  York");
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "Los Angeles Meetup",
+            FutureStart,
+            FutureEnd,
+            city: "Los Angeles");
+
+        await using var seedContext = CreateContext(databaseName);
+        var subscriber = await ProvisionUserAsync(seedContext, identity);
+        seedContext.UserSubscriptions.Add(
+            UserSubscription.Create(subscriber.Id, SubscriptionKind.City, "new york", null));
+        await seedContext.SaveChangesAsync(CancellationToken.None);
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, identity);
+
+        // Act
+        var result = await handler.Handle(new GetMyFeedQuery(), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value.Items);
+        Assert.Equal("New York Meetup", result.Value.Items[0].Title);
+    }
+
+    [Fact]
     public async Task GetMyFeedQueryHandler_Should_MapCardFields_When_EventMatches()
     {
         // Arrange

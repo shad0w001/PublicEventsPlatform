@@ -63,7 +63,7 @@ internal static class EventDiscoveryQueryService
                  e.Locations.Any(l =>
                      l.Kind == EventLocationKind.Physical &&
                      l.City != null &&
-                     criteria.NormalizedCities!.Contains(l.City.ToLower().Trim()))) ||
+                     criteria.NormalizedCities!.Contains(l.City))) ||
                 (hasOnlineFeedFilter &&
                  e.Locations.Any(l => l.Kind == EventLocationKind.Virtual)));
         }
@@ -73,7 +73,7 @@ internal static class EventDiscoveryQueryService
             query = query.Where(e => e.Locations.Any(l =>
                 l.Kind == EventLocationKind.Physical &&
                 l.Country != null &&
-                countries.Contains(l.Country.ToLower().Trim())));
+                countries.Contains(l.Country)));
         }
 
         if (!string.IsNullOrWhiteSpace(criteria.Query))
@@ -86,7 +86,7 @@ internal static class EventDiscoveryQueryService
                 e.Locations.Any(l =>
                     l.Kind == EventLocationKind.Physical &&
                     l.City != null &&
-                    l.City.ToLower().Contains(term)) ||
+                    l.City.Contains(term)) ||
                 (e.Category != null && e.Category.Name.ToLower().Contains(term)));
         }
 

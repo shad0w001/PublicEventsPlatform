@@ -1,4 +1,5 @@
 using Domain.Events;
+using Domain.Events.EventLocations;
 using Domain.Events.Events;
 using Domain.Events.Services;
 
@@ -224,5 +225,40 @@ public class EventUpdateTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(EventLocationType.Hybrid, eventEntity.LocationType);
+    }
+
+    [Fact]
+    public void EventService_Should_NormalizeLocationCityAndCountry_When_LocationsPatchApplied()
+    {
+        // Arrange
+        var (eventEntity, _) = EventTestData.CreateDraft();
+        EventTestData.MakePublishReady(eventEntity);
+        eventEntity.Locations.Clear();
+        var patch = new EventUpdatePatch
+        {
+            StartTime = EventTestData.DefaultEventStart,
+            EndTime = EventTestData.DefaultEventEnd,
+            TimeZoneId = EventTestData.ValidTimeZoneId,
+            Locations =
+            [
+                new EventLocation
+                {
+                    Name = "Venue",
+                    Kind = EventLocationKind.Physical,
+                    Address = "123 Main St",
+                    City = "New  York",
+                    Country = " United  States "
+                }
+            ]
+        };
+
+        // Act
+        var result = EventService.Update(eventEntity, patch, EventTestData.ActingUserId);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        var location = Assert.Single(eventEntity.Locations);
+        Assert.Equal("new york", location.City);
+        Assert.Equal("united states", location.Country);
     }
 }

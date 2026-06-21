@@ -357,6 +357,123 @@ public class BrowseEventsQueryHandlerTests
     }
 
     [Fact]
+    public async Task BrowseEventsQueryHandler_Should_MatchNormalizedCity_When_EventCityHasExtraWhitespace()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var user = SeedUser(databaseName);
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "New York Concert",
+            FutureStart,
+            FutureEnd,
+            city: "New  York");
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "Los Angeles Show",
+            FutureStart,
+            FutureEnd,
+            city: "Los Angeles");
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context);
+
+        // Act
+        var result = await handler.Handle(
+            new BrowseEventsQuery(City: ["New York"]),
+            CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value.Items);
+        Assert.Equal("New York Concert", result.Value.Items[0].Title);
+    }
+
+    [Fact]
+    public async Task BrowseEventsQueryHandler_Should_FilterByCountry_When_CountryProvided()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var user = SeedUser(databaseName);
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "Bulgaria Event",
+            FutureStart,
+            FutureEnd,
+            city: "Sofia",
+            country: "Bulgaria");
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "Germany Event",
+            FutureStart,
+            FutureEnd,
+            city: "Berlin",
+            country: "Germany");
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context);
+
+        // Act
+        var result = await handler.Handle(
+            new BrowseEventsQuery(Country: ["Bulgaria"]),
+            CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value.Items);
+        Assert.Equal("Bulgaria Event", result.Value.Items[0].Title);
+    }
+
+    [Fact]
+    public async Task BrowseEventsQueryHandler_Should_FilterByHybridLocationType_When_HybridEventExists()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var user = SeedUser(databaseName);
+        await SeedBrowsableEventAsync(
+            databaseName,
+            user,
+            "Hybrid Conference",
+            FutureStart,
+            FutureEnd,
+            locations:
+            [
+                new EventLocation
+                {
+                    Name = "Venue",
+                    Kind = EventLocationKind.Physical,
+                    Address = "1 Main St",
+                    City = "Sofia"
+                },
+                new EventLocation
+                {
+                    Name = "Stream",
+                    Kind = EventLocationKind.Virtual,
+                    Url = "https://stream.example/live"
+                }
+            ]);
+        await SeedBrowsableEventAsync(databaseName, user, "Physical Only", FutureStart, FutureEnd, city: "Sofia");
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context);
+
+        // Act
+        var result = await handler.Handle(
+            new BrowseEventsQuery(LocationType: [EventLocationType.Hybrid]),
+            CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value.Items);
+        Assert.Equal("Hybrid Conference", result.Value.Items[0].Title);
+        Assert.Equal(EventLocationType.Hybrid, result.Value.Items[0].LocationType);
+    }
+
+    [Fact]
     public async Task BrowseEventsQueryHandler_Should_MapCardFields_When_EventMatches()
     {
         // Arrange
@@ -438,6 +555,7 @@ public class BrowseEventsQueryHandlerTests
         DateTime end,
         Guid? categoryId = null,
         string city = "Sofia",
+        string? country = null,
         EventTier tier = EventTier.Small,
         AdmissionType admissionType = AdmissionType.Free,
         EventLocationType locationType = EventLocationType.Physical,
@@ -460,7 +578,8 @@ public class BrowseEventsQueryHandlerTests
                 Name = "Main Hall",
                 Kind = EventLocationKind.Physical,
                 Address = "123 Main St",
-                City = city
+                City = city,
+                Country = country
             }
         ];
 
