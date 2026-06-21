@@ -96,7 +96,7 @@ docker compose down -v   # remove container and wipe data
 
 Local Postgres installations can keep using port 5432 independently.
 
-## Kafka UI (Phase 7)
+## Kafka UI
 
 After `docker compose up -d`, open **http://localhost:8080** to browse topics and messages. The WebApi (on the host) uses bootstrap server **`localhost:9092`**.
 
@@ -106,7 +106,7 @@ When Auth0 does not provide a profile picture (e.g. email/password users), new u
 
 New events get `Events:DefaultBannerUrl` on create (default: `/images/default-event-banner.png`) — static placeholder at `src/WebApi/wwwroot/images/default-event-banner.png`; upload via `POST /api/events/{id}/banner` replaces it.
 
-## Stripe (test mode, Phase 6)
+## Stripe (test mode)
 
 Backend secrets live in **`appsettings.Development.json`** (gitignored). See `appsettings.Development.example.json` for the template.
 
