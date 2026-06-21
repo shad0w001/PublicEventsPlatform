@@ -44,9 +44,5 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.LastActive)
             .IsRequired();
-
-        builder.HasMany(u => u.GroupMemberships)
-            .WithOne(gm => gm.User)
-            .HasForeignKey(gm => gm.UserId);
     }
 }
