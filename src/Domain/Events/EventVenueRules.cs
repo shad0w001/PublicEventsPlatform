@@ -113,7 +113,7 @@ public static class EventVenueRules
         return $"{normalizedAddress}|{normalizedCity}";
     }
 
-    internal static string? NormalizePlaceComponent(string? value)
+    public static string? NormalizePlaceComponent(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {

@@ -1,7 +1,9 @@
 using Application.Abstractions.Authentication;
 using Application.Abstractions.Media;
 using Application.Abstractions.Messaging;
+using Application.Abstractions.Pagination;
 using Application.Events;
+using Application.Events.BrowseEvents;
 using Application.Events.CancelEvent;
 using Application.Events.CreateEvent;
 using Application.Events.DeleteEvent;
@@ -25,6 +27,7 @@ namespace WebApi.Controllers;
 [SwaggerTag("Events")]
 public sealed class EventsController(
     ICommandHandler<CreateEventCommand, EventSummaryResponse> createEventHandler,
+    IQueryHandler<BrowseEventsQuery, PagedResult<EventBrowseCardResponse>> browseEventsHandler,
     IQueryHandler<ListMyEventsQuery, IReadOnlyList<MyEventListItemResponse>> listMyEventsHandler,
     IQueryHandler<GetEventQuery, GetEventResponse> getEventHandler,
     ICommandHandler<UpdateEventCommand, EventDetailResponse> updateEventHandler,
@@ -77,6 +80,27 @@ public sealed class EventsController(
     public async Task<IActionResult> ListMine(CancellationToken cancellationToken)
     {
         var result = await listMyEventsHandler.Handle(new ListMyEventsQuery(), cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpGet]
+    [SwaggerOperation(
+        Summary = "Browse published events",
+        Description = """
+            Anonymous access. Returns paginated event cards for published future events only (excludes draft, cancelled, and soft-deleted).
+            Default sort: startTime ascending. Default page size 30 (max 30).
+            Multi-value filters: repeat query params or comma-separated values — OR within each dimension, AND across dimensions.
+            categoryId includes events tagged with the category or any descendant subcategory.
+            city/country match any physical location segment (normalized case-insensitive).
+            q performs case-insensitive text search on title, description, location type, location cities, and category name.
+            """)]
+    [SwaggerResponse(StatusCodes.Status200OK, "Paginated browse results", typeof(PagedResult<EventBrowseCardResponse>))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid date range", typeof(ProblemDetails))]
+    public async Task<IActionResult> Browse(
+        [FromQuery] BrowseEventsQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await browseEventsHandler.Handle(query, cancellationToken);
         return result.ToActionResult();
     }
 

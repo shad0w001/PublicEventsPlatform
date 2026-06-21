@@ -622,8 +622,8 @@ public static class EventService
             Address = source.Address,
             Latitude = source.Latitude,
             Longitude = source.Longitude,
-            City = source.City,
-            Country = source.Country,
+            City = EventVenueRules.NormalizePlaceComponent(source.City),
+            Country = EventVenueRules.NormalizePlaceComponent(source.Country),
             ExternalPlaceId = source.ExternalPlaceId
         };
 }

@@ -54,6 +54,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(e => e.CreatedByUserId);
 
         builder.HasIndex(e => e.Status);
+        builder.HasIndex(e => new { e.Status, e.StartTime });
         builder.HasIndex(e => e.PublishedAt);
 
         builder.HasOne<Domain.Users.User>()
@@ -87,6 +88,8 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
             l.Property(x => x.Latitude);
             l.Property(x => x.Longitude);
             l.Property(x => x.ExternalPlaceId).HasMaxLength(200);
+
+            l.HasIndex(x => x.City);
         });
     }
 }
