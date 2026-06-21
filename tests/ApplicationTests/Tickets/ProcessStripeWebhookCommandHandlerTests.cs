@@ -15,6 +15,8 @@ using SharedKernel;
 
 namespace ApplicationTests.Tickets;
 
+using ApplicationTests.Events;
+
 public class ProcessStripeWebhookCommandHandlerTests
 {
     private const string CheckoutSessionId = "cs_test_webhook_session";
@@ -261,7 +263,7 @@ public class ProcessStripeWebhookCommandHandlerTests
             ProfilePictureUrl = "/images/default-avatar.png"
         };
 
-        var createResult = EventService.Create(EventTier.Small, "Paid Event", buyer.Id);
+        var createResult = EventService.Create(EventTier.Small, "Paid Event", buyer.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);

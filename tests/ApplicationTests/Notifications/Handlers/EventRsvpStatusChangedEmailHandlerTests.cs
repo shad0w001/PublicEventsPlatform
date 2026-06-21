@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ApplicationTests.Notifications.Handlers;
 
+using ApplicationTests.Events;
+
 public class EventRsvpStatusChangedEmailHandlerTests
 {
     [Theory]
@@ -56,7 +58,7 @@ public class EventRsvpStatusChangedEmailHandlerTests
     private static async Task<Guid> SeedPublishedFreeEventAsync(string databaseName, User hostUser)
     {
         var hostParticipantId = hostUser.Id;
-        var createResult = EventService.Create(EventTier.Small, "Community Meetup", hostParticipantId);
+        var createResult = EventService.Create(EventTier.Small, "Community Meetup", hostParticipantId, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         @event.Description = "Description";
         @event.CategoryId = Guid.Parse("11111111-1111-1111-1111-111111111111");

@@ -17,6 +17,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Groups;
 
+using ApplicationTests.Events;
+
 internal static class GroupVerificationTestData
 {
     public const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -70,10 +72,7 @@ internal static class GroupVerificationTestData
             var utcNow = DateTime.UtcNow;
             for (var i = 0; i < GroupVerificationConstants.MinCompletedEvents; i++)
             {
-                var eventCreate = EventService.Create(
-                    EventTier.Small,
-                    $"Completed Event {i + 1}",
-                    group.Id);
+                var eventCreate = EventService.Create(EventTier.Small, $"Completed Event {i + 1}", group.Id, EventTestConstants.DefaultBannerUrl);
                 var @event = eventCreate.Value.Event;
                 var organizer = eventCreate.Value.Organizer;
 

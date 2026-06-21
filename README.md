@@ -104,6 +104,8 @@ After `docker compose up -d`, open **http://localhost:8080** to browse topics an
 
 When Auth0 does not provide a profile picture (e.g. email/password users), new users get `UserProfile:DefaultAvatarUrl` from appsettings (default: `/images/default-avatar.png`). The static file is served from `src/WebApi/wwwroot/images/default-avatar.png`.
 
+New events get `Events:DefaultBannerUrl` on create (default: `/images/default-event-banner.png`) — static placeholder at `src/WebApi/wwwroot/images/default-event-banner.png`; upload via `POST /api/events/{id}/banner` replaces it.
+
 ## Stripe (test mode, Phase 6)
 
 Backend secrets live in **`appsettings.Development.json`** (gitignored). See `appsettings.Development.example.json` for the template.

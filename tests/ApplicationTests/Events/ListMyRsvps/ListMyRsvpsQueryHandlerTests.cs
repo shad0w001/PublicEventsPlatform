@@ -16,6 +16,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Events.ListMyRsvps;
 
+using ApplicationTests.Events;
+
 public class ListMyRsvpsQueryHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -281,7 +283,7 @@ public class ListMyRsvpsQueryHandlerTests
             }
         }
 
-        var createResult = EventService.Create(EventTier.Small, title, hostUser.Id);
+        var createResult = EventService.Create(EventTier.Small, title, hostUser.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);
@@ -319,7 +321,7 @@ public class ListMyRsvpsQueryHandlerTests
     {
         await using var context = CreateContext(databaseName);
         var hostUser = await ProvisionUserAsync(context, hostIdentity);
-        var createResult = EventService.Create(EventTier.Small, "Dual RSVP Event", hostUser.Id);
+        var createResult = EventService.Create(EventTier.Small, "Dual RSVP Event", hostUser.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);
@@ -350,7 +352,7 @@ public class ListMyRsvpsQueryHandlerTests
     {
         await using var context = CreateContext(databaseName);
         var attendeeUser = await ProvisionUserAsync(context, attendeeIdentity);
-        var createResult = EventService.Create(EventTier.Small, "Draft RSVP Event", attendeeUser.Id);
+        var createResult = EventService.Create(EventTier.Small, "Draft RSVP Event", attendeeUser.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

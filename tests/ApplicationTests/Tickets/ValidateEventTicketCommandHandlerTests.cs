@@ -14,6 +14,8 @@ using SharedKernel;
 
 namespace ApplicationTests.Tickets;
 
+using ApplicationTests.Events;
+
 public class ValidateEventTicketCommandHandlerTests
 {
     [Fact]
@@ -210,7 +212,7 @@ public class ValidateEventTicketCommandHandlerTests
         var host = (await hostService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
         var now = DateTime.UtcNow;
-        var createResult = EventService.Create(EventTier.Small, "Validation Event", host.Id);
+        var createResult = EventService.Create(EventTier.Small, "Validation Event", host.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);
@@ -270,7 +272,7 @@ public class ValidateEventTicketCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = TicketQueryTestHelper.DefaultAvatarUrl }));
         var host = (await hostService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Draft Event", host.Id);
+        var createResult = EventService.Create(EventTier.Small, "Draft Event", host.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         @event.AdmissionType = AdmissionType.Paid;

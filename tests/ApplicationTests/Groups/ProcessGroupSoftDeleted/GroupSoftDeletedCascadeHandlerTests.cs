@@ -14,6 +14,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ApplicationTests.Groups.ProcessGroupSoftDeleted;
 
+using ApplicationTests.Events;
+
 public class GroupSoftDeletedCascadeHandlerTests
 {
     private const string DefaultGroupImageUrl = "/images/default-group.png";
@@ -122,7 +124,7 @@ public class GroupSoftDeletedCascadeHandlerTests
         var group = groupCreateResult.Value.Group;
         GroupService.SoftDelete(group);
 
-        var userEventCreate = EventService.Create(EventTier.Small, "User Hosted", owner.Id);
+        var userEventCreate = EventService.Create(EventTier.Small, "User Hosted", owner.Id, EventTestConstants.DefaultBannerUrl);
         var userEvent = userEventCreate.Value.Event;
         MakePublishReady(userEvent, owner.Id, FixedUtcNow.AddDays(7));
         EventService.Publish(userEvent, categoryExists: true, recentPublishCount: 0, maxPublishesPerWeek: 6);
@@ -206,7 +208,7 @@ public class GroupSoftDeletedCascadeHandlerTests
             DefaultGroupImageUrl);
         var group = groupCreateResult.Value.Group;
 
-        var eventCreateResult = EventService.Create(EventTier.Small, "Group Event", group.Id);
+        var eventCreateResult = EventService.Create(EventTier.Small, "Group Event", group.Id, EventTestConstants.DefaultBannerUrl);
         var @event = eventCreateResult.Value.Event;
         MakePublishReady(@event, owner.Id, startTime);
 

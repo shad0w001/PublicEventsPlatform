@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApplicationTests.Events.Services;
 
+using ApplicationTests.Events;
+
 public class EventTextSearchHelperTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -114,7 +116,7 @@ public class EventTextSearchHelperTests
 
     private static Event CreateEvent(string title, string description, string city)
     {
-        var createResult = EventService.Create(EventTier.Small, title, Guid.NewGuid());
+        var createResult = EventService.Create(EventTier.Small, title, Guid.NewGuid(), EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
 
         EventService.Update(@event, new EventUpdatePatch { Description = description }, Guid.NewGuid());
@@ -141,7 +143,7 @@ public class EventTextSearchHelperTests
         var category = new EventCategory { Name = "General" };
         context.EventCategories.Add(category);
 
-        var createResult = EventService.Create(EventTier.Small, title, user.Id);
+        var createResult = EventService.Create(EventTier.Small, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

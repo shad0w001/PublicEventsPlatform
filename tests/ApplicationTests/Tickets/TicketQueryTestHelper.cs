@@ -25,6 +25,8 @@ using SharedKernel;
 
 namespace ApplicationTests.Tickets;
 
+using ApplicationTests.Events;
+
 internal static class TicketQueryTestHelper
 {
     internal const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -44,7 +46,7 @@ internal static class TicketQueryTestHelper
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var buyer = (await buyerService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Paid Event", buyer.Id);
+        var createResult = EventService.Create(EventTier.Small, "Paid Event", buyer.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);
@@ -112,7 +114,7 @@ internal static class TicketQueryTestHelper
         var group = groupCreate.Value.Group;
         var organizerMembership = GroupMembership.Create(group.Id, organizer.Id, GroupMemberRole.Organizer);
 
-        var createResult = EventService.Create(EventTier.Small, "Group Paid Event", owner.Id);
+        var createResult = EventService.Create(EventTier.Small, "Group Paid Event", owner.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var eventOrganizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);

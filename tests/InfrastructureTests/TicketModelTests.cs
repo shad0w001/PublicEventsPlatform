@@ -83,7 +83,7 @@ public class TicketModelTests
                 serviceRole: ServiceRole.User);
             context.Users.Add(buyer);
 
-            var createResult = EventService.Create(EventTier.Small, "Paid Persist Event", buyer.Id);
+            var createResult = EventService.Create(EventTier.Small, "Paid Persist Event", buyer.Id, "/images/default-event-banner.png");
             var @event = createResult.Value.Event;
             var organizer = createResult.Value.Organizer;
 

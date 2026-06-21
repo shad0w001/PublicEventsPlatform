@@ -18,7 +18,7 @@ public class OutboxPersistenceTests
 
         await using (var context = CreateContext(databaseName))
         {
-            var createResult = EventService.Create(EventTier.Small, "Outbox test", Guid.CreateVersion7());
+            var createResult = EventService.Create(EventTier.Small, "Outbox test", Guid.CreateVersion7(), "/images/default-event-banner.png");
             Assert.True(createResult.IsSuccess);
 
             var @event = createResult.Value.Event;
@@ -48,7 +48,7 @@ public class OutboxPersistenceTests
         var databaseName = Guid.NewGuid().ToString();
         await using (var context = CreateContext(databaseName))
         {
-            var createResult = EventService.Create(EventTier.Small, "Unmapped outbox", Guid.CreateVersion7());
+            var createResult = EventService.Create(EventTier.Small, "Unmapped outbox", Guid.CreateVersion7(), "/images/default-event-banner.png");
             Assert.True(createResult.IsSuccess);
 
             context.Events.Add(createResult.Value.Event);
@@ -71,7 +71,7 @@ public class OutboxPersistenceTests
 
         await using (var context = CreateContext(databaseName))
         {
-            var createResult = EventService.Create(EventTier.Small, "Clear events", Guid.CreateVersion7());
+            var createResult = EventService.Create(EventTier.Small, "Clear events", Guid.CreateVersion7(), "/images/default-event-banner.png");
             Assert.True(createResult.IsSuccess);
 
             var @event = createResult.Value.Event;

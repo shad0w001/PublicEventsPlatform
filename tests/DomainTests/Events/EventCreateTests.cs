@@ -14,13 +14,14 @@ public class EventCreateTests
         const string title = "Summer Meetup";
 
         // Act
-        var result = EventService.Create(EventTier.Small, title, hostId);
+        var result = EventService.Create(EventTier.Small, title, hostId, EventTestData.DefaultBannerUrl);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(EventTier.Small, result.Value.Event.Tier);
         Assert.Equal(EventStatus.Draft, result.Value.Event.Status);
         Assert.Equal("Summer Meetup", result.Value.Event.Title);
+        Assert.Equal(EventTestData.DefaultBannerUrl, result.Value.Event.BannerImageUrl);
         Assert.Equal(EventConstants.DraftEpochUtc, result.Value.Event.StartTime);
         Assert.Null(result.Value.Event.CreatedByUserId);
         Assert.Equal(hostId, result.Value.Organizer.ParticipantId);
@@ -34,7 +35,7 @@ public class EventCreateTests
         var hostId = EventTestData.HostParticipantId;
 
         // Act
-        var result = EventService.Create(EventTier.Big, EventTestData.DefaultTitle, hostId);
+        var result = EventService.Create(EventTier.Big, EventTestData.DefaultTitle, hostId, EventTestData.DefaultBannerUrl);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -53,7 +54,7 @@ public class EventCreateTests
         var hostId = EventTestData.HostParticipantId;
 
         // Act
-        var result = EventService.Create(EventTier.Small, "   ", hostId);
+        var result = EventService.Create(EventTier.Small, "   ", hostId, EventTestData.DefaultBannerUrl);
 
         // Assert
         Assert.True(result.IsFailure);

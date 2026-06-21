@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ApplicationTests.Search;
 
+using ApplicationTests.Events;
+
 public class EventUpdatedEmbeddingHandlerTests
 {
     [Fact]
@@ -79,7 +81,7 @@ public class EventUpdatedEmbeddingHandlerTests
         User hostUser,
         EventStatus targetStatus)
     {
-        var createResult = EventService.Create(EventTier.Small, "Indexed Event", hostUser.Id);
+        var createResult = EventService.Create(EventTier.Small, "Indexed Event", hostUser.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         @event.Description = "Description";
         @event.CategoryId = Guid.Parse("11111111-1111-1111-1111-111111111111");

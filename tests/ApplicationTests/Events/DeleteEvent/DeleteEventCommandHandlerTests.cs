@@ -15,6 +15,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Events.DeleteEvent;
 
+using ApplicationTests.Events;
+
 public class DeleteEventCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -172,7 +174,7 @@ public class DeleteEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, title, user.Id);
+        var createResult = EventService.Create(EventTier.Small, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -193,7 +195,7 @@ public class DeleteEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Published Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Published Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

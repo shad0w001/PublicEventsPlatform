@@ -14,6 +14,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Events.CancelEvent;
 
+using ApplicationTests.Events;
+
 public class CancelEventCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -137,7 +139,7 @@ public class CancelEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Draft Ready", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Draft Ready", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -167,7 +169,7 @@ public class CancelEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, title, user.Id);
+        var createResult = EventService.Create(EventTier.Small, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
@@ -188,7 +190,7 @@ public class CancelEventCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Published Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Published Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

@@ -15,6 +15,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Plugins.UpdateEventPlugin;
 
+using ApplicationTests.Events;
+
 public class UpdateEventPluginCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -119,7 +121,7 @@ public class UpdateEventPluginCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Big, "Big Draft", user.Id);
+        var createResult = EventService.Create(EventTier.Big, "Big Draft", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 

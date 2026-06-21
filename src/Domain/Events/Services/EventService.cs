@@ -10,7 +10,8 @@ public static class EventService
     public static Result<(Event Event, EventOrganizer Organizer)> Create(
         EventTier tier,
         string title,
-        Guid hostParticipantId)
+        Guid hostParticipantId,
+        string defaultBannerUrl)
     {
         var titleResult = ValidateTitle(title, required: true);
         if (titleResult.IsFailure)
@@ -25,6 +26,7 @@ public static class EventService
             Tier = tier,
             Title = trimmedTitle,
             Description = string.Empty,
+            BannerImageUrl = defaultBannerUrl,
             StartTime = EventConstants.DraftEpochUtc,
             EndTime = EventConstants.DraftEpochUtc,
             Status = EventStatus.Draft,

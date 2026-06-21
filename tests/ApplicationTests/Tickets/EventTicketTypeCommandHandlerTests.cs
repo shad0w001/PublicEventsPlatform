@@ -20,6 +20,8 @@ using Microsoft.Extensions.Options;
 
 namespace ApplicationTests.Tickets;
 
+using ApplicationTests.Events;
+
 public class EventTicketTypeCommandHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -237,7 +239,7 @@ public class EventTicketTypeCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Paid Ticket Event", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Paid Ticket Event", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);
@@ -260,7 +262,7 @@ public class EventTicketTypeCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Paid With Type", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Paid With Type", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);
@@ -285,7 +287,7 @@ public class EventTicketTypeCommandHandlerTests
             Options.Create(new UserProfileOptions { DefaultAvatarUrl = DefaultAvatarUrl }));
         var user = (await currentUserService.GetOrProvisionAsync(CancellationToken.None)).Value;
 
-        var createResult = EventService.Create(EventTier.Small, "Published Paid", user.Id);
+        var createResult = EventService.Create(EventTier.Small, "Published Paid", user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
         var categoryId = SeedCategoryInContext(context);

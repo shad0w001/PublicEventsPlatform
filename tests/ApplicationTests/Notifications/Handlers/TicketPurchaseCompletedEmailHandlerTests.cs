@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ApplicationTests.Notifications.Handlers;
 
+using ApplicationTests.Events;
+
 public class TicketPurchaseCompletedEmailHandlerTests
 {
     [Fact]
@@ -88,7 +90,7 @@ public class TicketPurchaseCompletedEmailHandlerTests
         int quantity,
         User? userToSeed = null)
     {
-        var createResult = EventService.Create(EventTier.Small, "Paid Concert", buyerParticipantId);
+        var createResult = EventService.Create(EventTier.Small, "Paid Concert", buyerParticipantId, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         @event.Description = "Description";
         @event.CategoryId = Guid.Parse("11111111-1111-1111-1111-111111111111");

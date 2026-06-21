@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApplicationTests.Events.BrowseEvents;
 
+using ApplicationTests.Events;
+
 public class BrowseEventsQueryHandlerTests
 {
     private const string DefaultAvatarUrl = "/images/default-avatar.png";
@@ -612,7 +614,7 @@ public class BrowseEventsQueryHandlerTests
         string? bannerUrl = null)
     {
         await using var context = CreateContext(databaseName);
-        var createResult = EventService.Create(tier, title, user.Id);
+        var createResult = EventService.Create(tier, title, user.Id, EventTestConstants.DefaultBannerUrl);
         var @event = createResult.Value.Event;
         var organizer = createResult.Value.Organizer;
 
