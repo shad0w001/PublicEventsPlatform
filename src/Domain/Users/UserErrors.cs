@@ -27,4 +27,8 @@ public static class UserErrors
     public static Error EmailNotVerified() => Error.Forbidden(
         "Users.EmailNotVerified",
         "Email verification is required to perform this action");
+
+    public static Error InsufficientAdminPermissions() => Error.Forbidden(
+        "Users.InsufficientAdminPermissions",
+        "Platform administrator permissions are required to perform this action");
 }

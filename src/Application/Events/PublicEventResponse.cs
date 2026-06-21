@@ -20,6 +20,7 @@ public sealed record PublicEventResponse(
     DateTime? PublishedAt,
     string HostDisplayName,
     bool HostIsGroup,
+    bool HostIsVerified,
     IReadOnlyList<EventLocationResponse> Locations,
     IReadOnlyList<EventPluginResponse> Plugins,
     IReadOnlyList<TicketTypeResponse> TicketTypes,

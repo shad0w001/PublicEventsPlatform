@@ -28,6 +28,52 @@ internal sealed class GroupAccessService(IApplicationDbContext context)
         return group;
     }
 
+    public async Task<Result<Group>> GetActiveGroupForVerificationAsync(
+        Guid groupId,
+        CancellationToken cancellationToken)
+    {
+        var group = await context.Groups
+            .Include(g => g.GroupMemberships)
+            .Include(g => g.VerificationApplications)
+            .FirstOrDefaultAsync(g => g.Id == groupId, cancellationToken);
+
+        if (group is null)
+        {
+            return Result.Failure<Group>(GroupErrors.NotFound(groupId));
+        }
+
+        if (group.IsDeleted)
+        {
+            return Result.Failure<Group>(GroupErrors.Deleted(groupId));
+        }
+
+        return group;
+    }
+
+    public async Task<Result<(Group Group, GroupVerificationApplication Application)>> GetGroupWithVerificationApplicationAsync(
+        Guid applicationId,
+        CancellationToken cancellationToken)
+    {
+        var application = await context.GroupVerificationApplications
+            .Include(a => a.Group)
+            .ThenInclude(g => g.VerificationApplications)
+            .FirstOrDefaultAsync(a => a.Id == applicationId, cancellationToken);
+
+        if (application is null)
+        {
+            return Result.Failure<(Group, GroupVerificationApplication)>(
+                GroupVerificationApplicationErrors.NotFound(applicationId));
+        }
+
+        if (application.Group.IsDeleted)
+        {
+            return Result.Failure<(Group, GroupVerificationApplication)>(
+                GroupErrors.Deleted(application.Group.Id));
+        }
+
+        return (application.Group, application);
+    }
+
     public Result<GroupMembership> GetMembership(Group group, Guid userId)
     {
         var membership = group.GroupMemberships.FirstOrDefault(m => m.UserId == userId);

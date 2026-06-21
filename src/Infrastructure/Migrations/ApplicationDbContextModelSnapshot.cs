@@ -224,6 +224,45 @@ namespace Infrastructure.Migrations
                     b.ToTable("group_memberships", "public");
                 });
 
+            modelBuilder.Entity("Domain.Groups.GroupVerificationApplication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.ToTable("group_verification_applications", "public");
+                });
+
             modelBuilder.Entity("Domain.Participants.Participant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -640,6 +679,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasDefaultValue("");
 
+                    b.Property<bool>("IsVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("JoinPolicy")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -655,6 +699,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.ToTable("groups", "public");
                 });
@@ -870,6 +917,25 @@ namespace Infrastructure.Migrations
                     b.Navigation("Group");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Groups.GroupVerificationApplication", b =>
+                {
+                    b.HasOne("Domain.Groups.Group", "Group")
+                        .WithMany("VerificationApplications")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Users.User", "SubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("SubmittedByUser");
                 });
 
             modelBuilder.Entity("Domain.Plugins.PluginData", b =>
@@ -1105,6 +1171,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("GroupMemberships");
 
                     b.Navigation("JoinApplications");
+
+                    b.Navigation("VerificationApplications");
                 });
 
             modelBuilder.Entity("Domain.Users.User", b =>

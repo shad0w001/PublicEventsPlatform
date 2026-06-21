@@ -15,4 +15,5 @@ public sealed record EventBrowseCardResponse(
     Guid? CategoryId,
     string? CategoryName,
     string HostDisplayName,
-    bool HostIsGroup);
+    bool HostIsGroup,
+    bool HostIsVerified);

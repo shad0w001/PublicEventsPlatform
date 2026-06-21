@@ -8,6 +8,8 @@ internal static class NotificationConsumerNames
     public const string GroupJoinApplicationSubmitted = "email.group-join-application-submitted";
     public const string GroupJoinApplicationApproved = "email.group-join-application-approved";
     public const string GroupJoinApplicationRejected = "email.group-join-application-rejected";
+    public const string GroupVerificationApplicationApproved = "email.group-verification-application-approved";
+    public const string GroupVerificationApplicationRejected = "email.group-verification-application-rejected";
 }
 
 internal static class NotificationConsumerTopics
@@ -18,6 +20,8 @@ internal static class NotificationConsumerTopics
     public const string GroupJoinApplicationSubmitted = "domain.group-join-application-submitted";
     public const string GroupJoinApplicationApproved = "domain.group-join-application-approved";
     public const string GroupJoinApplicationRejected = "domain.group-join-application-rejected";
+    public const string GroupVerificationApplicationApproved = "domain.group-verification-application-approved";
+    public const string GroupVerificationApplicationRejected = "domain.group-verification-application-rejected";
 
     public static readonly string[] NotificationTopics =
     [
@@ -26,6 +30,8 @@ internal static class NotificationConsumerTopics
         EventCancelled,
         GroupJoinApplicationSubmitted,
         GroupJoinApplicationApproved,
-        GroupJoinApplicationRejected
+        GroupJoinApplicationRejected,
+        GroupVerificationApplicationApproved,
+        GroupVerificationApplicationRejected
     ];
 }

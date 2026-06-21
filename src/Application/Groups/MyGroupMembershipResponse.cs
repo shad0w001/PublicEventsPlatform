@@ -8,5 +8,6 @@ public sealed record MyGroupMembershipResponse(
     string ProfileImageUrl,
     GroupJoinPolicy JoinPolicy,
     int MemberCount,
+    bool IsVerified,
     GroupMemberRole MyRole,
     DateTime JoinedAt);

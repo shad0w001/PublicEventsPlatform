@@ -58,6 +58,8 @@ public static class DependencyInjection
         services.AddScoped<IGroupJoinApplicationSubmittedEmailHandler, GroupJoinApplicationSubmittedEmailHandler>();
         services.AddScoped<IGroupJoinApplicationApprovedEmailHandler, GroupJoinApplicationApprovedEmailHandler>();
         services.AddScoped<IGroupJoinApplicationRejectedEmailHandler, GroupJoinApplicationRejectedEmailHandler>();
+        services.AddScoped<IGroupVerificationApplicationApprovedEmailHandler, GroupVerificationApplicationApprovedEmailHandler>();
+        services.AddScoped<IGroupVerificationApplicationRejectedEmailHandler, GroupVerificationApplicationRejectedEmailHandler>();
         services.AddScoped<IEventCancelledEmailHandler, EventCancelledEmailHandler>();
         services.AddScoped<IGroupSoftDeletedCascadeHandler, GroupSoftDeletedCascadeHandler>();
         services.AddScoped<IEventEmbeddingIndexService, EventEmbeddingIndexService>();
@@ -65,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<IEventUpdatedEmbeddingHandler, EventUpdatedEmbeddingHandler>();
         services.AddScoped<IEventCancelledEmbeddingHandler, EventCancelledEmbeddingHandler>();
         services.AddScoped<GroupAccessService>();
+        services.AddScoped<GroupVerificationEligibilityService>();
         services.AddScoped<EventAccessService>();
         services.AddScoped<EventVenueConflictService>();
 

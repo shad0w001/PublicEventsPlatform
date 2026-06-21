@@ -49,7 +49,7 @@ internal static class EventHostDisplayNameLookup
     {
         if (hostParticipantIds.Count == 0)
         {
-            return new HostDisplayNameLookup([], []);
+            return new HostDisplayNameLookup([], [], []);
         }
 
         var distinctHostIds = hostParticipantIds.Distinct().ToList();
@@ -57,10 +57,11 @@ internal static class EventHostDisplayNameLookup
         var groups = await context.Groups
             .AsNoTracking()
             .Where(g => distinctHostIds.Contains(g.Id))
-            .Select(g => new { g.Id, g.Name })
+            .Select(g => new { g.Id, g.Name, g.IsVerified })
             .ToListAsync(cancellationToken);
 
         var groupHostIds = groups.Select(g => g.Id).ToHashSet();
+        var verifiedGroupHostIds = groups.Where(g => g.IsVerified).Select(g => g.Id).ToHashSet();
         var names = groups.ToDictionary(g => g.Id, g => g.Name);
 
         var userHostIds = distinctHostIds.Where(id => !groupHostIds.Contains(id)).ToList();
@@ -81,10 +82,11 @@ internal static class EventHostDisplayNameLookup
             }
         }
 
-        return new HostDisplayNameLookup(groupHostIds, names);
+        return new HostDisplayNameLookup(groupHostIds, verifiedGroupHostIds, names);
     }
 
     internal sealed record HostDisplayNameLookup(
         HashSet<Guid> GroupHostIds,
+        HashSet<Guid> VerifiedGroupHostIds,
         Dictionary<Guid, string> Names);
 }

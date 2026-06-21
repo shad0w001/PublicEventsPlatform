@@ -21,6 +21,9 @@ public static class GroupPermissions
     public static bool CanCreateEventsAsGroup(GroupMemberRole role) =>
         role is GroupMemberRole.Organizer or GroupMemberRole.Administrator or GroupMemberRole.Owner;
 
+    public static bool CanSubmitVerificationApplication(GroupMemberRole role) =>
+        CanCreateEventsAsGroup(role);
+
     public static bool CanBuyTicketsAsGroup(GroupMemberRole role) =>
         role is GroupMemberRole.Organizer or GroupMemberRole.Administrator or GroupMemberRole.Owner;
 

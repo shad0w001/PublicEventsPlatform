@@ -99,6 +99,32 @@ public class GetGroupQueryHandlerTests
     }
 
     [Fact]
+    public async Task GetGroupQueryHandler_Should_ReturnIsVerified_When_GroupIsVerified()
+    {
+        // Arrange
+        var databaseName = Guid.NewGuid().ToString();
+        var owner = CreateUser("auth0|verified-owner", "verified-owner@example.com");
+        var group = SeedGroup(databaseName, owner, null);
+        await using (var seedContext = CreateContext(databaseName))
+        {
+            var persisted = await seedContext.Groups.SingleAsync(g => g.Id == group.Id);
+            persisted.IsVerified = true;
+            persisted.VerifiedAt = DateTime.UtcNow;
+            await seedContext.SaveChangesAsync();
+        }
+
+        await using var context = CreateContext(databaseName);
+        var handler = CreateHandler(context, new FakeUserIdentityAccessor { IsAuthenticated = false });
+
+        // Act
+        var result = await handler.Handle(new GetGroupQuery(group.Id), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value.IsVerified);
+    }
+
+    [Fact]
     public async Task GetGroupQueryHandler_Should_ReturnNotFound_When_GroupIsDeleted()
     {
         // Arrange
