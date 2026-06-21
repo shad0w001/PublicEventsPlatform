@@ -13,7 +13,8 @@ using Application.Notifications;
 using Application.Notifications.Handlers;
 using Application.Notifications.Services;
 using Application.Payments;
-using Application.Search.Stubs;
+using Application.Search;
+using Application.Search.Services;
 using Application.Users;
 using Application.Users.Services;
 using Microsoft.Extensions.Configuration;
@@ -45,6 +46,9 @@ public static class DependencyInjection
         services.Configure<NotificationsOptions>(
             configuration.GetSection(NotificationsOptions.SectionName));
 
+        services.Configure<EmbeddingsOptions>(
+            configuration.GetSection(EmbeddingsOptions.SectionName));
+
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<NotificationRecipientService>();
@@ -56,8 +60,10 @@ public static class DependencyInjection
         services.AddScoped<IGroupJoinApplicationRejectedEmailHandler, GroupJoinApplicationRejectedEmailHandler>();
         services.AddScoped<IEventCancelledEmailHandler, EventCancelledEmailHandler>();
         services.AddScoped<IGroupSoftDeletedCascadeHandler, GroupSoftDeletedCascadeHandler>();
-        services.AddScoped<IEventPublishedEmbeddingStubHandler, EventPublishedEmbeddingStubHandler>();
-        services.AddScoped<IEventUpdatedEmbeddingStubHandler, EventUpdatedEmbeddingStubHandler>();
+        services.AddScoped<IEventEmbeddingIndexService, EventEmbeddingIndexService>();
+        services.AddScoped<IEventPublishedEmbeddingHandler, EventPublishedEmbeddingHandler>();
+        services.AddScoped<IEventUpdatedEmbeddingHandler, EventUpdatedEmbeddingHandler>();
+        services.AddScoped<IEventCancelledEmbeddingHandler, EventCancelledEmbeddingHandler>();
         services.AddScoped<GroupAccessService>();
         services.AddScoped<EventAccessService>();
         services.AddScoped<EventVenueConflictService>();

@@ -2,6 +2,7 @@ using Application;
 using Infrastructure;
 using Infrastructure.Database;
 using Infrastructure.Messaging;
+using Infrastructure.Search;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using WebApi;
@@ -38,6 +39,11 @@ using (var scope = app.Services.CreateScope())
     var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
         .CreateLogger("Infrastructure.Messaging.KafkaTopicProvisioner");
     await KafkaTopicProvisioner.EnsureTopicsAsync(app.Configuration, logger);
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    await EmbeddingsStartupValidator.ValidateAsync(scope.ServiceProvider);
 }
 
 if (app.Environment.IsDevelopment())

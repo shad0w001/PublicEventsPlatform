@@ -106,11 +106,22 @@ internal sealed class IndexerKafkaConsumer(
             return;
         }
 
-        await DispatchAsync(
-            scope.ServiceProvider,
-            consumeResult.Topic,
-            consumeResult.Message.Value,
-            cancellationToken);
+        try
+        {
+            await DispatchAsync(
+                scope.ServiceProvider,
+                consumeResult.Topic,
+                consumeResult.Message.Value,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Indexer handler failed for message {MessageId} on topic {Topic}; marking processed",
+                messageId,
+                consumeResult.Topic);
+        }
 
         await idempotency.MarkProcessedAsync(consumerName, messageId, cancellationToken);
 
@@ -130,16 +141,23 @@ internal sealed class IndexerKafkaConsumer(
         {
             case IndexerConsumerTopics.EventPublished:
                 await serviceProvider
-                    .GetRequiredService<IEventPublishedEmbeddingStubHandler>()
+                    .GetRequiredService<IEventPublishedEmbeddingHandler>()
                     .HandleAsync(
                         DomainEventPayloadDeserializer.DeserializeEventPublished(payload),
                         cancellationToken);
                 break;
             case IndexerConsumerTopics.EventUpdated:
                 await serviceProvider
-                    .GetRequiredService<IEventUpdatedEmbeddingStubHandler>()
+                    .GetRequiredService<IEventUpdatedEmbeddingHandler>()
                     .HandleAsync(
                         DomainEventPayloadDeserializer.DeserializeEventUpdated(payload),
+                        cancellationToken);
+                break;
+            case IndexerConsumerTopics.EventCancelled:
+                await serviceProvider
+                    .GetRequiredService<IEventCancelledEmbeddingHandler>()
+                    .HandleAsync(
+                        DomainEventPayloadDeserializer.DeserializeEventCancelled(payload),
                         cancellationToken);
                 break;
             default:
@@ -151,6 +169,7 @@ internal sealed class IndexerKafkaConsumer(
     {
         IndexerConsumerTopics.EventPublished => IndexerConsumerNames.EventPublished,
         IndexerConsumerTopics.EventUpdated => IndexerConsumerNames.EventUpdated,
+        IndexerConsumerTopics.EventCancelled => IndexerConsumerNames.EventCancelled,
         _ => null
     };
 }
