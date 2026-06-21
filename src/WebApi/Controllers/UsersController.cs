@@ -75,7 +75,7 @@ public sealed class UsersController(
             Requires verified email. Includes Going and Interested only (NotGoing excluded).
             Events must be published or cancelled; drafts and soft-deleted events are omitted.
             Sorted by startTime ascending, then registeredAt descending.
-            Paid tickets are listed separately in Phase 6 (/me/tickets); the SPA merges both on "My tickets / RSVPs".
+            Paid tickets are listed separately at GET /api/users/me/tickets; the SPA merges both on "My tickets / RSVPs".
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "RSVP list", typeof(IReadOnlyList<MyRsvpListItemResponse>))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]
@@ -94,7 +94,7 @@ public sealed class UsersController(
             Returns individual paid tickets for the caller as personal purchases and as Organizer+ group purchases.
             Requires verified email. Inventory list only (no QR/manual codes — use GET /api/tickets/{ticketId}).
             Includes published and cancelled events (refundPending when event cancelled); excludes draft and soft-deleted events.
-            Hides non-Paid orders (refunded tickets excluded once Phase 7 marks orders).
+            Excludes non-Paid orders (refunded order status is not modeled in v1).
             Sorted by event startTime ascending, then ticket created descending.
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "Ticket list", typeof(MyTicketsResponse))]

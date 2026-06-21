@@ -175,7 +175,7 @@ public sealed class GroupsController(
         Description = """
             Owner-only. Sets DeletedAt and clears pending join applications; memberships are retained for potential restore.
             Returns 204 on success. Returns 404 if the group is missing or already deleted (HTTP is not idempotent).
-            Cancel future events and refund tickets are handled asynchronously in Phase 7.
+            Cancel future group-hosted events and send cancellation emails asynchronously after delete.
             """)]
     [SwaggerResponse(StatusCodes.Status204NoContent, "Group soft-deleted")]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Not authenticated", typeof(ProblemDetails))]

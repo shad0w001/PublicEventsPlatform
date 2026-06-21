@@ -22,7 +22,7 @@ public static class DependencyInjection
                 Version = "v1",
                 Description =
                     "Thesis backend for public events from small gatherings to conferences. " +
-                    "Auth0 JWT; groups and events are rolled out by phase."
+                    "Auth0 JWT; groups, events, tickets, discovery, and verified organizations."
             });
 
             options.EnableAnnotations();

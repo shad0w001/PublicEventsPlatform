@@ -137,7 +137,7 @@ public sealed class EventsController(
         Description = """
             Partial update for the creation wizard (screens 2–5) and post-publish edits.
             Wizard: screen 2 = description/category; screen 3 = startTime, endTime, timeZoneId;
-            screen 4 = locations[]; screen 5 = admissionType (see Phase 4 wizard in AGENTS.md).
+            screen 4 = locations[]; screen 5 = admissionType.
             Requires verified email and edit permission (user host, user-hosted CreatedByUserId, or current group Organizer+).
             Omitted fields are unchanged; locations[] replaces the full list when sent.
             Location segments: startsAt/endsAt optional (UTC); both required if either is set; must fall within
@@ -222,7 +222,7 @@ public sealed class EventsController(
             Requires at least one location segment; segment startsAt/endsAt are optional but validated when set.
             Physical venue double-booking: rejects publish when another published event occupies the same place
             at overlapping effective times (Events.VenueConflict).
-            Paid admission is allowed without ticket types until the tickets phase.
+            Draft paid events may omit ticket types until publish; publish requires at least one valid ticket type.
             Returns 200 with full published event detail.
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "Event published", typeof(EventDetailResponse))]
@@ -247,7 +247,7 @@ public sealed class EventsController(
             participantId omitted or equal to the caller = RSVP as self. participantId = group id requires Organizer+ on that group.
             The event host participant must remain Going (EventAttendees.HostMustRemainGoing).
             Cancelled events reject changes (Events.CannotModifyCancelled). Paid events return EventAttendees.PaidAdmissionNotAllowed.
-            Raises EventRsvpStatusChanged when status changes (notification consumers in Phase 7).
+            Raises EventRsvpStatusChanged when status changes (confirmation email sent asynchronously via Kafka).
             Returns 200 with the updated RSVP row.
             """)]
     [SwaggerResponse(StatusCodes.Status200OK, "RSVP updated", typeof(EventRsvpResponse))]
@@ -272,7 +272,7 @@ public sealed class EventsController(
         Summary = "Cancel a published event",
         Description = """
             Sets event status to Cancelled. Requires verified email and edit permission (host, creator, or group Organizer+).
-            Only published events can be cancelled; use DELETE for draft events. Refunds and attendee notifications are async (Phase 7).
+            Only published events can be cancelled; use DELETE for draft events. Cancellation emails are sent asynchronously via Kafka.
             Returns 204 on success.
             """)]
     [SwaggerResponse(StatusCodes.Status204NoContent, "Event cancelled")]
