@@ -1,6 +1,7 @@
 using Domain.Events;
 using Domain.Groups;
 using Domain.Plugins;
+using Domain.Search;
 using Domain.Subscriptions;
 using Domain.Tickets;
 using Domain.Users;
@@ -26,6 +27,7 @@ public interface IApplicationDbContext
     DbSet<TicketCode> TicketCodes { get; }
     DbSet<TicketValidation> TicketValidations { get; }
     DbSet<UserSubscription> UserSubscriptions { get; }
+    DbSet<EventEmbedding> EventEmbeddings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
