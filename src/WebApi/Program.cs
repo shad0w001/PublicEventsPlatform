@@ -56,6 +56,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("Spa");
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -43,6 +43,16 @@ public static class DependencyInjection
             });
         });
 
+        services.AddCors(options =>
+        {
+            options.AddPolicy("Spa", policy =>
+            {
+                policy.WithOrigins("http://localhost:5173")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+
         return services;
     }
 }
