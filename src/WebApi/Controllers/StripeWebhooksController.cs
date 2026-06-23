@@ -11,7 +11,8 @@ namespace WebApi.Controllers;
 [Route("api/webhooks/stripe")]
 [SwaggerTag("StripeWebhooks")]
 public sealed class StripeWebhooksController(
-    ICommandHandler<ProcessStripeWebhookCommand> handler) : ControllerBase
+    ICommandHandler<ProcessStripeWebhookCommand> handler,
+    ILogger<StripeWebhooksController> logger) : ControllerBase
 {
     [AllowAnonymous]
     [HttpPost]
@@ -43,6 +44,11 @@ public sealed class StripeWebhooksController(
         {
             return Ok();
         }
+
+        logger.LogWarning(
+            "Stripe webhook rejected: {ErrorCode} — {ErrorMessage}",
+            result.Error.Code,
+            result.Error.Message);
 
         return result.ToActionResult();
     }
